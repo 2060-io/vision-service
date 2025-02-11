@@ -1,0 +1,55 @@
+'_neutral': This represents the default, unaltered shape of the model.
+
+'browDownLeft'/'browDownRight': These control the downward movement of the left and right eyebrows, respectively.
+
+'browInnerUp': Controls upward movement of the area between the eyebrows.
+
+'browOuterUpLeft'/'browOuterUpRight': These control the upward movement of the outer part of the left and right brows.
+
+'cheekPuff': Causes the cheeks to puff out, as if filled with air.
+
+'cheekSquintLeft'/'cheekSquintRight': These involve the squinting or tightening of the left and right cheek, respectively.
+
+'eyeBlinkLeft'/'eyeBlinkRight': Control the blinking of the left and right eye.
+
+'eyeLookDownLeft'/'eyeLookDownRight', 'eyeLookInLeft'/'eyeLookInRight', 'eyeLookOutLeft'/'eyeLookOutRight', 'eyeLookUpLeft'/'eyeLookUpRight': These direct where the eyes look—down, in towards the nose, out towards the ear, or up.
+
+'eyeSquintLeft'/'eyeSquintRight': Control squinting for each eye.
+
+'eyeWideLeft'/'eyeWideRight': Widen each eye, as in an expression of surprise.
+
+'jawForward': Moves the jaw forward.
+
+'jawLeft' / 'jawRight': Move the jaw to the left or right.
+
+'jawOpen': Opens the jaw.
+
+'mouthClose': Closes the mouth.
+
+'mouthDimpleLeft'/'mouthDimpleRight': Creates a dimple or indentation on the left and right side of the mouth.
+
+'mouthFrownLeft'/'mouthFrownRight': Causes frowning on the left and right side of the mouth.
+
+'mouthFunnel': Shapes the lips into a funnel or "o" shape.
+
+'mouthLeft' / 'mouthRight': Move the mouth to the left or right.
+
+'mouthLowerDownLeft'/'mouthLowerDownRight': Moves the lower lip down on each side.
+
+'mouthPressLeft'/'mouthPressRight': Presses the lips together on each side.
+
+'mouthPucker': Makes the lips pucker, as if to whistle.
+
+'mouthRollLower'/'mouthRollUpper': Rolls the lower or upper lip inward.
+
+'mouthShrugLower'/'mouthShrugUpper': Indicates movement of the lower and upper areas of the mouth, similar to a shrug.
+
+'mouthSmileLeft'/'mouthSmileRight': Causes a smile on each side of the mouth.
+
+'mouthStretchLeft'/'mouthStretchRight': Stretches the mouth to the left and right.
+
+'mouthUpperUpLeft'/'mouthUpperUpRight': Moves the upper lip upwards on the left and right side.
+
+'noseSneerLeft'/'noseSneerRight': Raises the left and right nostril for a sneering expression.
+
+'Transformation Yaw', 'Transformation Pitch', 'Transformation Roll', 'Transformation Translation Vector': These aren't blendshapes but transformations. They control the orientation (yaw, pitch, roll) and position (translation vector) of the model in 3D space.

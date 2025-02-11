@@ -1,0 +1,30 @@
+Signal: eyeLookDownLeft,        Values: <0.4 - >0.7     - Look at the camera, then move your eyes downwards, and then return your eyes to the camera.
+SIgnal: eyeLookUpLeft,          Values: <0.02 - >0.2    - Look at the camera, then move your eyes upwards, and then return your eyes to the camera.
+Signal: eyeLookInLeft,          Values: <0.1 - >0.8     - Keep your head facing forward, then tilt your head to the left and then return your head to the front.
+Signal: eyeLookInRight,         Values: <0.1 - >0.8     - Keep your head facing forward, then tilt your head to the right and then return your head to the front.
+Signal: eyeLookOutLeft,         Values: <0.3 - >0.5     - Focus your eyes on the camera, then slightly shift your eyes to the left and then return your eyes to the camera.
+Signal: eyeLookOutRight,        Values: <0.1 - >0.5     - Focus your eyes on the camera, then slightly shift your eyes to the right and then return your eyes to the camera.
+Signal: Transformation Pitch    Values: <0.1 - >0.3     - Keep your head facing forward, then tilt your head upwards, then tilt your head downwards and then return your head to the front 
+Signal: Transformation Pitch    Values: <0.1 - >0.3     - Keep your head facing forward, then tilt your head downwards, then tilt your head upwards and then return your head to the front 
+Signal: mouthSmileRight         Values: <0.2 - >0.6     - Smile and then Serious
+Signal: jawOpen                 Values: <0.2 - >0.6     - Open then Close Mouth
+
+
+
+
+
+
+
+
+
+Smaller texts:
+Signal: eyeLookDownLeft,        Values: <0.4 - >0.7     -Look at the camera, then lower your eyes, then return to the camera.
+Signal: eyeLookUpLeft,          Values: <0.02 - >0.2    -Look at the camera, then raise your eyes, then return to the camera.
+Signal: eyeLookInLeft,          Values: <0.1 - >0.8     -Keep your head upright, then incline it to the left, then return to the front.
+Signal: eyeLookInRight,         Values: <0.1 - >0.8     -Keep your head upright, then incline it to the right, then return to the front.
+Signal: eyeLookOutLeft,         Values: <0.3 - >0.5     -Look at the camera, then shift your eyes to the left , then return to the camera.
+Signal: eyeLookOutRight,        Values: <0.1 - >0.5     -Look at the camera, then shift your eyes to the right , then return to the camera.
+Signal: Transformation Pitch    Values: <0.1 - >0.3     -Keep your head aligned, then tip it upwards, then downwards, then return to center.
+Signal: Transformation Pitch    Values: <0.1 - >0.3     -Keep your head aligned, then tip it downwards, then upwards, then return to center.
+Signal: mouthSmileRight         Values: <0.2 - >0.6     -Smile and then Serious
+Signal: jawOpen                 Values: <0.2 - >0.6     -Open then Close Mouth

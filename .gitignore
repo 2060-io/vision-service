@@ -1,0 +1,8 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+app.log
+Assets/
+downloaded_images/
+uploaded_images/

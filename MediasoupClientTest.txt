@@ -1,0 +1,99 @@
+1. open https://v3demo.mediasoup.org/
+wss://v3demo.mediasoup.org:4443/?roomId={roomId}&peerId={peerId}
+
+or
+
+open https://dts-webrtc.dev.2060.io.  
+wss://dts-webrtc.dev.2060.io:443?roomId=4iftk3ej&peerId=<tu_peer_id>.
+
+2. Run this command with the room id:
+curl -X POST "http://0.0.0.0:5000/connect_to_mediasoup_server?roomid=1234&token=mytoken&rd=somevalue&d=somevalue&q=somevalue"
+
+or
+
+curl -X POST "http://0.0.0.0:5000/connect_to_mediasoup_server?full_url='wss://dts-webrtc.dev.2060.io:443?roomId=4iftk3ej&peerId=<your_peer_id>'&token=mytoken&rd=somevalue&d=somevalue&q=somevalue"
+
+
+roomId mediasoup demo
+curl -X POST "http://0.0.0.0:5000/connect_to_mediasoup_server?roomid=yaoe9lhs&token=mytoken&rd=somevalue&d=somevalue&q=somevalue"
+
+full_url mediasoup demo:
+curl -X POST "http://0.0.0.0:5000/connect_to_mediasoup_server?token=mytoken&rd=somevalue&d=somevalue&q=somevalue&full_url=wss%3A%2F%2Fv3demo.mediasoup.org%3A4443%3FroomId%3Dyaoe9lhs%26peerId%3Dmypeerid"
+
+full_url Mobiera mediasoup:
+curl -X POST "http://0.0.0.0:5000/connect_to_mediasoup_server?token=mytoken&rd=somevalue&d=somevalue&q=somevalue&full_url=wss%3A%2F%2Fdts-webrtc.dev.2060.io%3A443%3FroomId%3Dvp1mkkhs%26peerId%3Dmypeerid"
+
+
+
+
+
+
+
+
+
+
+curl -X POST "http://0.0.0.0:5000/join-call?token=mytoken&rd=somevalue&d=somevalue&q=somevalue&full_url=wss%3A%2F%2Fv3demo.mediasoup.org%3A4443%3FroomId%3Dypaf71pw%26peerId%3Dmypeerid"
+
+
+
+- For demo mediasoup:
+
+curl -X POST http://localhost:5000/join-call \
+  -H "Content-Type: application/json" \
+  -d '{
+        "ws_url": "wss://v3demo.mediasoup.org:4443/?roomId=ypaf71pw&peerId=192324",
+        "datastore_base_url": "https://ds.dev.2060.io",
+        "callback_base_url": "https://unic-id-issuer-dts.dev.2060.io",
+        "token": "1234535522323",
+        "lang": "es"
+      }'
+
+curl -X POST http://localhost:5000/join-call -H "Content-Type: application/json" -d '{"ws_url": "wss://v3demo.mediasoup.org:4443/?roomId=34hpa5lk&peerId=192324", "datastore_base_url": "https://ds.dev.2060.io", "callback_base_url": "https://unic-id-issuer-dts.dev.2060.io", "token": "1234535522323", "lang": "es"}'
+
+
+For Mobiera 2060 server:  wss://dts-webrtc.dev.2060.io:443
+
+curl -X POST http://localhost:5000/join-call \
+    -H "Content-Type: application/json" \
+    -d '{
+          "ws_url": "wss://dts-webrtc.dev.2060.io:443/?roomId=1234&peerId=192324",
+          "datastore_base_url": "https://ds.dev.2060.io",
+          "callback_base_url": "https://unic-id-issuer-dts.dev.2060.io",
+          "token": "{UUID}",
+          "lang": "es"
+        }'
+
+
+curl -X POST http://localhost:5000/join-call -H "Content-Type: application/json" -d '{"ws_url": "wss://dts-webrtc.dev.2060.io:443/?roomId=uxrvt39j&peerId=192324", "datastore_base_url": "https://ds.dev.2060.io", "callback_base_url": "https://unic-id-issuer-dts.dev.2060.io", "token": "{UUID}", "lang": "es"}'
+
+
+
+Misc:
+curl -X POST http://localhost:5000/set_mediasoup_setting \
+     -H "Content-Type: application/json" \
+     -d '{
+           "mediasoup_save_input_and_output": true,
+           "mediasoup_rotate_input_image": 90
+         }'
+
+
+curl -X POST http://localhost:5000/set_mediasoup_setting \
+     -H "Content-Type: application/json" \
+     -d '{
+           "remove_urn_3gpp_video_orientation": true
+         }'
+
+
+curl -X POST http://localhost:5000/set_mediasoup_setting \
+     -H "Content-Type: application/json" \
+     -d '{
+           "clear_saved_images": true
+         }'
+
+
+curl -X POST http://localhost:5000/set_mediasoup_setting \
+     -H "Content-Type: application/json" \
+     -d '{
+           "mediasoup_save_input_and_output": true,
+           "matcher_save_match_images": true
+         }'
