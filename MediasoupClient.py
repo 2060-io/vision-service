@@ -19,7 +19,10 @@ from pymediasoup.data_consumer import DataConsumer
 from pymediasoup.data_producer import DataProducer
 from pymediasoup.sctp_parameters import SctpStreamParameters
 
-from livenessDetector.LivenessDetector import LivenessDetector
+#from livenessDetector.LivenessDetector import LivenessDetector
+from liveness_detector.server_launcher import GestureServerClient
+
+
 import traceback
 
 # Import aiortc
@@ -147,15 +150,28 @@ class IncommingVideoProcessor:
         number_of_gestures_to_request = 2
 
         self.add_frame_callback_fnc = add_frame_callback_fnc
-        self.livenessProcessor = LivenessDetector(
-            loop,
-            token,
-            rd,
-            d,
-            q,
-            lang,
-            number_of_gestures_to_request
+                
+        #self.livenessProcessor = LivenessDetector(
+        #    loop,
+        #    token,
+        #    rd,
+        #    d,
+        #    q,
+        #    lang,
+        #    number_of_gestures_to_request
+        #)
+        self.liveness_server_client = GestureServerClient(
+            server_executable_path="/Users/diegoaguilar/pruebas/mediapipe_mac/mediapipe/bazel-bin/livenessDetectorServerApp/livenessDetectorServer",
+            model_path="/Users/diegoaguilar/Downloads/face_landmarker.task",
+            gestures_folder_path="/Users/diegoaguilar/pruebas/mediapipe_mac/mediapipe/livenessDetectorServerApp/gestures",
+            language="en",
+            socket_path="/tmp/mysocket",
+            num_gestures=2
         )
+
+        # Set the callback functions
+        self.liveness_server_client.set_report_alive_callback(self.report_alive_callback)
+
         self.last_saved_time = 0
         self.save_dir = 'saved_images_temp'
         # Ensure the directory exists
@@ -182,7 +198,8 @@ class IncommingVideoProcessor:
                 # Flip the image along the vertical axis
                 img = cv2.flip(img, 1)
 
-            img_out = self.livenessProcessor.process_image(img)
+            #img_out = self.livenessProcessor.process_image(img)
+            img_out = self.liveness_server_client.process_frame(img)
 
             mediasoup_save_input_and_output = mediasoupSettings.get_setting("mediasoup_save_input_and_output")
             if mediasoup_save_input_and_output:
@@ -202,6 +219,9 @@ class IncommingVideoProcessor:
             video_frame.pts = pts
             video_frame.time_base = time_base
             self.add_frame_callback_fnc(video_frame)
+
+    def __del__(self):
+        self.liveness_server_client.stop_server()
 
 async def my_incoming_video_consume(track, video_processor):
     #fps_printer = FPSPrinter("My incoming video consume")
