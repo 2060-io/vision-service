@@ -37,10 +37,6 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN wget https://github.com/serengil/deepface_models/releases/download/v1.0/vgg_face_weights.h5
-RUN mkdir -p `dirname /root/.deepface/weights/vgg_face_weights.h5` 
-RUN mv vgg_face_weights.h5 /root/.deepface/weights/vgg_face_weights.h5
-
 # Install react front
 # RUN chmod +x pull.sh
 # RUN ./pull.sh

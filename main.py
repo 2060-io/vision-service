@@ -71,6 +71,8 @@ if __name__ == "__main__":
     expose_web_server_str = os.environ.get("EXPOSE_WEB_SERVER", "true")
     expose_web_server = bool(strtobool(expose_web_server_str))
     logging.info("expose_web_server: %s", expose_web_server_str)
+    vision_matcher_base_url = os.environ.get("VISION_MATCHER_BASE_URL", "http://localhost:5123")
+    logging.info("vision_matcher_base_url: %s", vision_matcher_base_url)
     logging.info("Using React build: %s", use_react_build)
     react_build_path = os.environ.get("REACT_BUILD_PATH", "./public/")
     logging.info("React build path: %s", react_build_path)
@@ -84,9 +86,9 @@ if __name__ == "__main__":
     asyncio_loop = asyncio.get_event_loop()
     logging.info("Asyncio loop: %s", asyncio_loop)
     # Pass the environment variable to the offer function when invoked by aiohttp
-    app.router.add_post(offer_path, partial(offer, asyncio_loop, number_of_gestures_to_request))
+    app.router.add_post(offer_path, partial(offer, asyncio_loop, number_of_gestures_to_request, vision_matcher_base_url))
     #app.router.add_post(picture_path, picture)
-    app.router.add_post(connect_to_mediasoup_path, connectToMediasoupServer)
+    app.router.add_post(connect_to_mediasoup_path, partial(connectToMediasoupServer, vision_matcher_base_url))
     app.router.add_get(requester_status_path, get_gestures_requester_process_status)
 
 
