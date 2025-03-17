@@ -66,28 +66,17 @@ if __name__ == "__main__":
     requester_status_path = os.environ.get("REQUESTER_STATUS_PATH")
     logging.info("requester_status_path: %s", requester_status_path)
     number_of_gestures_to_request = int(os.environ.get("NUMBER_OF_GESTURES_TO_REQUEST",2))
-    use_react_build_str = os.environ.get("USE_REACT_BUILD", "false")
-    use_react_build = bool(strtobool(use_react_build_str))
-    expose_web_server_str = os.environ.get("EXPOSE_WEB_SERVER", "true")
-    expose_web_server = bool(strtobool(expose_web_server_str))
-    logging.info("expose_web_server: %s", expose_web_server_str)
     vision_matcher_base_url = os.environ.get("VISION_MATCHER_BASE_URL", "http://localhost:5123")
     logging.info("vision_matcher_base_url: %s", vision_matcher_base_url)
-    logging.info("Using React build: %s", use_react_build)
-    react_build_path = os.environ.get("REACT_BUILD_PATH", "./public/")
-    logging.info("React build path: %s", react_build_path)
     
     logging.info("NUMBER_OF_GESTURES_TO_REQUEST: %d", number_of_gestures_to_request)
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
-    #app.router.add_get("/downloaded_images/{filename}", downloaded_images)
-    #app.router.add_get("/getlog", get_log)
     
     asyncio_loop = asyncio.get_event_loop()
     logging.info("Asyncio loop: %s", asyncio_loop)
     # Pass the environment variable to the offer function when invoked by aiohttp
     app.router.add_post(offer_path, partial(offer, asyncio_loop, number_of_gestures_to_request, vision_matcher_base_url))
-    #app.router.add_post(picture_path, picture)
     app.router.add_post(connect_to_mediasoup_path, partial(connectToMediasoupServer, vision_matcher_base_url))
     app.router.add_get(requester_status_path, get_gestures_requester_process_status)
 
@@ -96,27 +85,6 @@ if __name__ == "__main__":
     app.router.add_get('/mediasoup_images/{filename}', mediasoup_images)
     app.router.add_post('/set_mediasoup_setting', set_mediasoup_setting)
     
-    
-    if (expose_web_server):
-        if (use_react_build):
-            logging.info("Exposing react...")
-            # Catch-all route for /face/* to serve index.html
-            #app.router.add_route('GET', '/face/verification', partial(react_face_index, react_build_path))
-            #app.router.add_route('GET', '/face/capture', partial(react_face_index, react_build_path))
-            #app.router.add_route('GET', '/face/verification/', partial(react_face_index, react_build_path))
-            #app.router.add_route('GET', '/face/capture/', partial(react_face_index, react_build_path))
-
-            # Serve the static files (React build) at /face/
-            # app.router.add_route('GET', '/{tail:.*}', partial(react_static_handler, react_build_path))
-
-            # Serve the static files (React build) at /
-            app.router.add_static('/', react_build_path, name='react_app')
-        else:
-            logging.info("Exposing public...")
-            #app.router.add_get(verification_index_path, index)
-            #app.router.add_get(verification_client_js_path, javascript)
-            #app.router.add_get(capture_index_path, capture_index)
-
     web.run_app(
         app, access_log=None, host=host, port=port, ssl_context=ssl_context, loop=asyncio_loop
     )
