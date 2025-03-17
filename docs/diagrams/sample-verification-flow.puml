@@ -11,7 +11,7 @@ UA -> WRTCServer: join call (room info)
 WRTCServer --> Controller: peer joined
 Controller -> VS: /join-call(token)
 VS -> WRTCServer: join call
-UA <--> Controller: Video stream
+UA <--> VS: Video stream
 note left
   Here the user will be
   instructed to do gestures
@@ -20,7 +20,7 @@ end note
 VS -> VS: Validate liveness
 VS -> Controller: [callbackBaseUrl]/list/token
 Controller --> VS: Reference image
-VS -> FM: /face-match (Reference image, live image)
+VS -> FM: /face_match (Reference image, live image)
 FM --> VS: Result
 alt Match OK
 VS -> Controller: [callbackBaseUrl]/success/token
