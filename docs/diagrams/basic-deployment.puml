@@ -1,0 +1,19 @@
+@startuml
+component VS as "Vision Service"  {
+component WRTCClient as "WebRTC Client"
+component SM as "Session Manager"
+component LD as "Liveness Detector"
+}
+component FM as "Face Matcher"
+component Controller
+component WRTCServer as "WebRTC Server"
+actor UA as "User Agent"
+UA -> Controller
+UA <-> WRTCServer
+WRTCServer --> Controller
+Controller -> SM
+WRTCServer <-> WRTCClient
+SM <-> WRTCClient
+SM <--> LD
+SM --> FM
+@enduml

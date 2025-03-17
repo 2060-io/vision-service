@@ -1,0 +1,31 @@
+@startuml
+actor UA as "User Agent"
+participant Controller
+participant VS as "Vision Service"
+participant WRTCServer as "WebRTC Server"
+participant FM as "Face Matcher"
+
+Controller -> WRTCServer: create room
+Controller -> UA: room info
+UA -> WRTCServer: join call (room info)
+WRTCServer --> Controller: peer joined
+Controller -> VS: /join-call(token)
+VS -> WRTCServer: join call
+UA <--> VS: Video stream
+note left
+  Here the user will be
+  instructed to do gestures
+end note
+...
+VS -> VS: Validate liveness
+VS -> Controller: [callbackBaseUrl]/list/token
+Controller --> VS: Reference image
+VS -> FM: /face_match (Reference image, live image)
+FM --> VS: Result
+alt Match OK
+VS -> Controller: [callbackBaseUrl]/success/token
+else Match NOK
+VS -> Controller: [callbackBaseUrl]/failure/token 
+end
+...
+@enduml
