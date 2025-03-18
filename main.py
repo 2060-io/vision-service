@@ -65,7 +65,6 @@ if __name__ == "__main__":
     connect_to_mediasoup_path = os.environ.get("CONNECT_TO_MEDIASOUP_SERVER_PATH")
     requester_status_path = os.environ.get("REQUESTER_STATUS_PATH")
     logging.info("requester_status_path: %s", requester_status_path)
-    number_of_gestures_to_request = int(os.environ.get("NUMBER_OF_GESTURES_TO_REQUEST",2))
     use_react_build_str = os.environ.get("USE_REACT_BUILD", "false")
     use_react_build = bool(strtobool(use_react_build_str))
     expose_web_server_str = os.environ.get("EXPOSE_WEB_SERVER", "true")
@@ -77,7 +76,12 @@ if __name__ == "__main__":
     react_build_path = os.environ.get("REACT_BUILD_PATH", "./public/")
     logging.info("React build path: %s", react_build_path)
     
+    number_of_gestures_to_request = int(os.environ.get("NUMBER_OF_GESTURES_TO_REQUEST",2))
     logging.info("NUMBER_OF_GESTURES_TO_REQUEST: %d", number_of_gestures_to_request)
+    enable_debug_endpoints_str = os.environ.get("ENABLE_DEBUG_ENDPOINTS", "false")
+    enable_debug_endpoints = bool(strtobool(enable_debug_endpoints_str))
+    logging.info("enable_debug_endpoints: %s", enable_debug_endpoints_str)
+
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
     #app.router.add_get("/downloaded_images/{filename}", downloaded_images)
@@ -91,11 +95,10 @@ if __name__ == "__main__":
     app.router.add_post(connect_to_mediasoup_path, partial(connectToMediasoupServer, vision_matcher_base_url))
     app.router.add_get(requester_status_path, get_gestures_requester_process_status)
 
-
-    app.router.add_get('/ms_images', serve_images)  # Add route to view images
-    app.router.add_get('/mediasoup_images/{filename}', mediasoup_images)
-    app.router.add_post('/set_mediasoup_setting', set_mediasoup_setting)
-    
+    if enable_debug_endpoints:
+        app.router.add_get('/ms_images', serve_images)  # Add route to view images
+        app.router.add_get('/mediasoup_images/{filename}', mediasoup_images)
+        app.router.add_post('/set_mediasoup_setting', set_mediasoup_setting)
     
     if (expose_web_server):
         if (use_react_build):
