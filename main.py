@@ -65,11 +65,16 @@ if __name__ == "__main__":
     connect_to_mediasoup_path = os.environ.get("CONNECT_TO_MEDIASOUP_SERVER_PATH")
     requester_status_path = os.environ.get("REQUESTER_STATUS_PATH")
     logging.info("requester_status_path: %s", requester_status_path)
-    number_of_gestures_to_request = int(os.environ.get("NUMBER_OF_GESTURES_TO_REQUEST",2))
+
     vision_matcher_base_url = os.environ.get("VISION_MATCHER_BASE_URL", "http://localhost:5123")
     logging.info("vision_matcher_base_url: %s", vision_matcher_base_url)
     
+    number_of_gestures_to_request = int(os.environ.get("NUMBER_OF_GESTURES_TO_REQUEST",2))
     logging.info("NUMBER_OF_GESTURES_TO_REQUEST: %d", number_of_gestures_to_request)
+    enable_debug_endpoints_str = os.environ.get("ENABLE_DEBUG_ENDPOINTS", "false")
+    enable_debug_endpoints = bool(strtobool(enable_debug_endpoints_str))
+    logging.info("enable_debug_endpoints: %s", enable_debug_endpoints_str)
+
     app = web.Application()
     app.on_shutdown.append(on_shutdown)
     
@@ -80,10 +85,10 @@ if __name__ == "__main__":
     app.router.add_post(connect_to_mediasoup_path, partial(connectToMediasoupServer, vision_matcher_base_url))
     app.router.add_get(requester_status_path, get_gestures_requester_process_status)
 
-
-    app.router.add_get('/ms_images', serve_images)  # Add route to view images
-    app.router.add_get('/mediasoup_images/{filename}', mediasoup_images)
-    app.router.add_post('/set_mediasoup_setting', set_mediasoup_setting)
+    if enable_debug_endpoints:
+        app.router.add_get('/ms_images', serve_images)  # Add route to view images
+        app.router.add_get('/mediasoup_images/{filename}', mediasoup_images)
+        app.router.add_post('/set_mediasoup_setting', set_mediasoup_setting)
     
     web.run_app(
         app, access_log=None, host=host, port=port, ssl_context=ssl_context, loop=asyncio_loop
