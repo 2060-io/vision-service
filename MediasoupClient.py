@@ -170,12 +170,16 @@ class IncommingVideoProcessor:
         # Set the callback functions
         self.liveness_server_client.set_report_alive_callback(self.report_alive_callback)
 
+        self.liveness_server_client.start_server()
+
         self.last_saved_time = 0
         self.save_dir = 'saved_images_temp'
         # Ensure the directory exists
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
         
+    def report_alive_callback(self, alive):
+        print(f"Callback: The Person is {'alive' if alive else 'not alive'}.")
 
     def process_frame(self, i_frame):
         if self.add_frame_callback_fnc is not None:
@@ -276,12 +280,11 @@ class MyMediaIncomeVideoConsume:
             ))
 
     def get_liveness_processor(self):
-        return self.video_processor.livenessProcessor
+        return self.liveness_server_client
 
     def cleanup(self):
         # Cleanup logic
-        if self.video_processor and self.video_processor.livenessProcessor:
-            self.video_processor.livenessProcessor.cleanup()
+        if self.video_processor and self.video_processor.liveness_server_client:
             self.video_processor = None
 
     def __del__(self):
@@ -296,8 +299,8 @@ class MyMediaIncomeVideoConsume:
             self.__video_track = None
 
         # Cleanup processor
-        if self.video_processor and self.video_processor.livenessProcessor:
-            self.video_processor.livenessProcessor.cleanup()
+        if self.video_processor and self.video_processor.liveness_server_client:
+            self.video_processor.liveness_server_client.cleanup()
             self.video_processor = None
 
 
