@@ -10,7 +10,6 @@ from mediaManager.MediaManager import MediaManager
 from imagesComparator.imageFinder import FaceGlassesDetector
 from livenessDetector.tranlationManager import TranslationManager
 import threading
-from deepface import DeepFace
 import cv2
 import logging
 import mediasoupSettings
@@ -40,7 +39,7 @@ class LivenessDetector:
     DEBUG_INFO = 1
     DEBUG_THREADING = 2
 
-    def __init__(self, asyncio_loop, verification_token, rd, d, q, lang, number_of_gestures_to_request, debug_level=DEBUG_OFF):
+    def __init__(self, asyncio_loop, verification_token, rd, d, q, lang, number_of_gestures_to_request, vision_matcher_base_url, debug_level=DEBUG_OFF):
         logger.debug("ASYNCIO LOOP: %s", asyncio_loop)
         self.translator = TranslationManager(locale=lang, locales_dir="./gestures/locales/")
         self.asyncio_loop = asyncio_loop
@@ -70,6 +69,7 @@ class LivenessDetector:
         self.gestures_requester.set_ask_to_take_a_picture_callback(
             self.gestures_requester_take_a_picture_callback
         )
+        self.vision_matcher_base_url = vision_matcher_base_url
 
         mm_settings = generate_mm_settings(rd, d, q)
         self.mediaManager = MediaManager(mm_settings)
@@ -104,7 +104,6 @@ class LivenessDetector:
                     }
                 )
         self.gestures_requester.set_gestures_list(self.gestures_list)
-        #DeepFace.build_model("VGG-Face")
         self.match_counter = 0
 
     def is_this_done(self):
@@ -342,9 +341,36 @@ class LivenessDetector:
             image2_filename = os.path.join(IMAGE_DIR, f"match_{self.match_counter}_{timestamp}_image2.jpg")
             cv2.imwrite(image2_filename, image2)
             print(f"Images saved as {image1_filename} and {image2_filename}")            
+
+        # Call Face matcher
+        # Convert image1 and image2 to DATA URLs
+        import base64
+        import aiohttp
+
+        # Encode the image to PNG format (you can also use JPEG or other formats)
+        _, buffer1 = cv2.imencode('.jpg', image1)
+        _, buffer2 = cv2.imencode('.jpg', image2)
+
+        # Create the data URL
+        image1_url = f"data:image/jpeg;base64,{base64.b64encode(buffer1.tobytes()).decode('utf-8')}"
+        image2_url = f"data:image/jpeg;base64,{base64.b64encode(buffer2.tobytes()).decode('utf-8')}"
         
-        result = await asyncio.to_thread(DeepFace.verify, image1, image2, align = False)
-        return result
+        face_match_url = f"{self.vision_matcher_base_url}/face_match"
+
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        body = {
+            'image1_url': image1_url,
+            'image2_url': image2_url,
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(face_match_url, headers=headers, json=body) as response:
+                logger.debug("response status: %s", response.status)
+                logger.debug("response value: %s", await response.json())
+
+        return await response.json()
 
     def _compare_local_pictures_with_reference(self):
         return self.asyncio_loop.create_task(self._async_compare_local_pictures_with_reference())    

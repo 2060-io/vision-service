@@ -31,17 +31,18 @@ class VideoTransformTrack(MediaStreamTrack):
 
     kind = "video"
 
-    def __init__(self, asyncio_loop, verification_token, rd, d, q, lang, number_of_gestures_to_request, track):
+    def __init__(self, asyncio_loop, verification_token, rd, d, q, lang, number_of_gestures_to_request, vision_matcher_base_url, track):
         super().__init__()
         self.track = track
         self.livenessProcessor = LivenessDetector(
-            asyncio_loop, 
-            verification_token,
-            rd,
-            d,
-            q,
-            lang, 
-            number_of_gestures_to_request
+            asyncio_loop=asyncio_loop, 
+            verification_token=verification_token,
+            rd=rd,
+            d=d,
+            q=q,
+            lang=lang, 
+            number_of_gestures_to_request=number_of_gestures_to_request,
+            vision_matcher_base_url=vision_matcher_base_url
         )
 
     def cleanup(self):
@@ -70,8 +71,9 @@ class VideoTransformTrack(MediaStreamTrack):
 def log_info(xsource, msg, *args):
     logger.info(xsource + " " + msg, *args)
 
-async def offer(asyncio_loop, number_of_gestures_to_request, request):
+async def offer(asyncio_loop, number_of_gestures_to_request, vision_matcher_base_url, request):
     params = await request.json()
+    logger.debug(f"offer params: {params}")
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
     logger.debug("!! Verification token: %s", params.get("token"))
     verification_token = params.get("token")
@@ -112,6 +114,7 @@ async def offer(asyncio_loop, number_of_gestures_to_request, request):
                 q,
                 lang,
                 number_of_gestures_to_request,
+                vision_matcher_base_url,
                 relay.subscribe(track)
             )
 
