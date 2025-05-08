@@ -23,7 +23,6 @@ from pymediasoup.sctp_parameters import SctpStreamParameters
 
 from mediaManager.MediaManagerSettings import generate_mm_settings
 from mediaManager.MediaManager import MediaManager
-#from livenessDetector.LivenessDetector import LivenessDetector
 from liveness_detector.server_launcher import GestureServerClient
 
 
@@ -308,11 +307,6 @@ class IncommingVideoProcessor:
             logger.debug("reference images: %s", reference_images)
             distances = []
             for reference_image_path in reference_images:
-                #faces = await find_face(reference_image_path)
-                #if (len(faces) == 1):
-                #    logger.debug("The reference image (%s) meets the criteria for an acceptable face picture.", reference_image_path)            
-                #else:
-                #    logger.debug("The reference image (%s) doesn't meet the criteria for an acceptable face picture.", reference_image_path)            
                 reference_image = cv2.imread(reference_image_path)
                 p_index = 0
                 for picture in self.pictures:
