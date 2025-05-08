@@ -8,6 +8,7 @@ import argparse
 import secrets
 from typing import Optional, Dict, Awaitable, Any, TypeVar
 from asyncio.futures import Future
+from datetime import datetime
 import mediasoupSettings
 
 from pymediasoup import Device
@@ -19,7 +20,12 @@ from pymediasoup.data_consumer import DataConsumer
 from pymediasoup.data_producer import DataProducer
 from pymediasoup.sctp_parameters import SctpStreamParameters
 
-from livenessDetector.LivenessDetector import LivenessDetector
+
+from mediaManager.MediaManagerSettings import generate_mm_settings
+from mediaManager.MediaManager import MediaManager
+from liveness_detector.server_launcher import GestureServerClient
+
+
 import traceback
 
 # Import aiortc
@@ -145,24 +151,78 @@ class IncommingVideoProcessor:
         self.width = width
         self.height = height
         number_of_gestures_to_request = 2
+        self.asyncio_loop = loop
 
+        self.done = False #TODO: when done is True, the connecction should be closed
+        self.take_a_picture = False
+        self.pictures = []
         self.add_frame_callback_fnc = add_frame_callback_fnc
-        self.livenessProcessor = LivenessDetector(
-            asyncio_loop=loop,
-            verification_token=token,
-            rd=rd,
-            d=d,
-            q=q,
-            lang=lang,
-            number_of_gestures_to_request=number_of_gestures_to_request,
-            vision_matcher_base_url=vision_matcher_base_url
+                
+        #self.livenessProcessor = LivenessDetector(
+        #    asyncio_loop=loop,
+        #    verification_token=token,
+        #    rd=rd,
+        #    d=d,
+        #    q=q,
+        #    lang=lang,
+        #    number_of_gestures_to_request=number_of_gestures_to_request,
+        #    vision_matcher_base_url=vision_matcher_base_url
+
+        mm_settings = generate_mm_settings(rd, d, q)
+        self.mediaManager = MediaManager(mm_settings)
+        self.vision_matcher_base_url = vision_matcher_base_url
+        self.verification_token = token
+
+        self.liveness_server_client = GestureServerClient(
+            language=lang,
+            socket_path=f"/tmp/mysocket_{token}",
+            num_gestures=number_of_gestures_to_request
         )
+
+        # Set the callback functions
+        self.liveness_server_client.set_report_alive_callback(self.report_alive_callback)
+
+        def take_picture_callback(take_picture):
+            if take_picture:
+                self.take_a_picture = True
+                print("Take a picture callback triggered")
+
+        self.liveness_server_client.set_take_picture_callback(take_picture_callback)
+
+        # start the liveness server
+        self.liveness_server_client.start_server()
+
         self.last_saved_time = 0
         self.save_dir = 'saved_images_temp'
         # Ensure the directory exists
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
         
+    def report_alive_callback(self, alive):
+        if (alive):
+            logger.debug("The person is alive")
+            self._compare_local_pictures_with_reference()
+        else:
+            logger.debug("The person is not alive")
+            #self.gestures_requester.set_overwrite_text(
+            #    self.translator.translate("error.not_verified"),
+            #    True
+            #)
+            try:
+                self.mediaManager.failure(
+                    self.verification_token,
+                    callback = lambda: setattr(self, 'done', True)
+                )
+            except Exception as e:
+                logger.error("Error occurred:", str(e))
+                #self.gestures_requester.set_overwrite_text(
+                #    self.translator.translate("error.failure_report_error"),
+                #    True
+                #)
+
+        print(f"Callback: The Person is {'alive' if alive else 'not alive'}.")
+        self.done = True
+        print(f"Is this done: {self.is_this_done()}")
 
     def process_frame(self, i_frame):
         if self.add_frame_callback_fnc is not None:
@@ -183,7 +243,13 @@ class IncommingVideoProcessor:
                 # Flip the image along the vertical axis
                 img = cv2.flip(img, 1)
 
-            img_out = self.livenessProcessor.process_image(img)
+            if self.take_a_picture:
+                self.take_a_picture = False
+                picture = img.copy()
+                self.pictures.append(picture)
+            
+            #img_out = self.livenessProcessor.process_image(img)
+            img_out = self.liveness_server_client.process_frame(img)
 
             mediasoup_save_input_and_output = mediasoupSettings.get_setting("mediasoup_save_input_and_output")
             if mediasoup_save_input_and_output:
@@ -203,6 +269,197 @@ class IncommingVideoProcessor:
             video_frame.pts = pts
             video_frame.time_base = time_base
             self.add_frame_callback_fnc(video_frame)
+
+    def is_this_done(self):
+        return self.done
+    
+    def _compare_local_pictures_with_reference(self):
+        return self.asyncio_loop.create_task(self._async_compare_local_pictures_with_reference())
+    
+    async def _async_compare_local_pictures_with_reference(self):
+        try:    
+            #self.gestures_requester.set_overwrite_text(
+            #    self.translator.translate("message.getting_reference_images")
+            #)
+            ret = await self.mediaManager.download_images_from_token(
+                self.verification_token,
+                "./downloaded_images"
+            )
+            reference_images = ret["downloaded_images"]
+            if ret["status"] == "error":
+                logger.debug("Error getting reference images: %s", ret["msj"])
+                #self.gestures_requester.set_overwrite_text(ret["msj"], True)
+            else:
+                logger.debug("Reference images downloaded successfully")
+                #self.gestures_requester.set_overwrite_text(
+                #    self.translator.translate("message.done")
+                #)
+        except Exception as e:
+            # Handle the exception here
+            logger.error("Exception...Error getting reference images:", str(e))
+            #self.gestures_requester.set_overwrite_text(
+            #    self.translator.translate("error.getting_reference_images"), 
+            #    True
+            #)
+            reference_images = []
+
+        if len(reference_images) > 0:
+            logger.debug("reference images: %s", reference_images)
+            distances = []
+            for reference_image_path in reference_images:
+                reference_image = cv2.imread(reference_image_path)
+                p_index = 0
+                for picture in self.pictures:
+                    p_index += 1
+                    try:
+                        logger.debug('picture: %s', picture.shape)
+                        #faces = await find_face(picture)
+                        #if (len(faces) == 1):
+                        #    logger.debug("The picture meets the criteria for an acceptable face match.")            
+                        #else:
+                        #    logger.debug("The picture doesn't meet the criteria for an acceptable face match.")
+                        #    self.gestures_requester.set_overwrite_text(
+                        #        self.translator.translate("message.doing_face_match") + " (" + 
+                        #        str(p_index) + 
+                        #        " " + self.translator.translate("message.of") + " " +
+                        #        str(len(self.pictures)) + 
+                        #        "). " + 
+                        #        self.translator.translate("error.does_not_meet_criteria_for_acceptable_face_match")
+                        #    )
+                        #self.gestures_requester.set_overwrite_text(
+                        #    self.translator.translate("message.doing_face_match") + " (" + 
+                        #    str(p_index) + 
+                        #    " " + self.translator.translate("message.of") + " " +
+                        #    str(len(self.pictures)) + 
+                        #    "). "
+                        #)
+                        result = await self._async_face_match(picture, reference_image)
+                        logger.debug('face match result: %s', result)
+                        distances.append(result['distance'])
+                    except Exception as e:
+                        # Handle the exception here
+                        logger.error("Error occurred in face match: %s", str(e))
+                        #self.gestures_requester.set_overwrite_text(
+                        #    self.translator.translate("error.error_doing_face_match"), 
+                        #    True
+                        #)
+                #TODO: Comment this line to avoid deleting the reference images
+                os.remove(reference_image_path)
+
+            total_distance = sum(distances)
+            if len(distances) == 0:
+                average_distance = 1
+            else:
+                average_distance = total_distance / len(distances)
+            logger.debug('Average distance: %f', average_distance)
+            if average_distance < 0.4:
+                logger.debug("Verified!!")
+                #self.gestures_requester.set_overwrite_text(
+                #    self.translator.translate("message.verified")
+                #)
+                #self.gestures_requester.process_status = GesturesRequesterSystemStatus.DONE
+                try:
+                    self.mediaManager.success(
+                        self.verification_token,
+                        callback = lambda: setattr(self, 'done', True)
+                    )
+                except Exception as e:
+                    # Handle the exception here
+                    logger.error("Error occurred sending success: %s", str(e))
+                    #self.gestures_requester.set_overwrite_text(
+                    #    self.translator.translate("error.success_report"), 
+                    #    True
+                    #)
+            else:
+                logger.debug("Not Verified!!!")
+                #self.gestures_requester.set_overwrite_text(
+                #    self.translator.translate("error.not_verified"), 
+                #    True
+                #)
+                try:
+                    self.mediaManager.failure(
+                        self.verification_token,
+                        callback = lambda: setattr(self, 'done', True)
+                    )
+                except Exception as e:
+                    # Handle the exception here
+                    logger.error("Error occurred sending failure: %s", str(e))
+                    #self.gestures_requester.set_overwrite_text(
+                    #    self.translator.translate("error.failure_report_error"), 
+                    #    True
+                    #)
+        else:
+            logger.debug("No reference images found, not Verified!!!")
+            #self.gestures_requester.set_overwrite_text(
+            #    self.translator.translate("error.no_reference_images") + 
+            #    ", " + 
+            #    self.translator.translate("error.not_verified"), 
+            #    True
+            #)
+            try:
+                self.mediaManager.failure(
+                    self.verification_token,
+                    callback = lambda: setattr(self, 'done', True)
+                )
+            except Exception as e:
+                # Handle the exception here
+                logger.error("Error occurred sending failure (2): %s", str(e))
+                #self.gestures_requester.set_overwrite_text(
+                #    self.translator.translate("error.failure_report_error"), 
+                #    True
+                #)
+
+    async def _async_face_match(self, image1, image2):
+        matcher_save_match_images = mediasoupSettings.get_setting("matcher_save_match_images")
+        if matcher_save_match_images:
+            IMAGE_DIR = 'saved_images_temp'
+            if not os.path.exists(IMAGE_DIR):
+                os.makedirs(IMAGE_DIR)
+
+            # Generate a timestamp
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+            # Save image1
+            image1_filename = os.path.join(IMAGE_DIR, f"match_{self.match_counter}_{timestamp}_image1.jpg")
+            cv2.imwrite(image1_filename, image1)
+
+            # Save image2
+            image2_filename = os.path.join(IMAGE_DIR, f"match_{self.match_counter}_{timestamp}_image2.jpg")
+            cv2.imwrite(image2_filename, image2)
+            print(f"Images saved as {image1_filename} and {image2_filename}")            
+
+        # Call Face matcher
+        # Convert image1 and image2 to DATA URLs
+        import base64
+        import aiohttp
+
+        # Encode the image to PNG format (you can also use JPEG or other formats)
+        _, buffer1 = cv2.imencode('.jpg', image1)
+        _, buffer2 = cv2.imencode('.jpg', image2)
+
+        # Create the data URL
+        image1_url = f"data:image/jpeg;base64,{base64.b64encode(buffer1.tobytes()).decode('utf-8')}"
+        image2_url = f"data:image/jpeg;base64,{base64.b64encode(buffer2.tobytes()).decode('utf-8')}"
+        
+        face_match_url = f"{self.vision_matcher_base_url}/face_match"
+
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        body = {
+            'image1_url': image1_url,
+            'image2_url': image2_url,
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(face_match_url, headers=headers, json=body) as response:
+                logger.debug("response status: %s", response.status)
+                logger.debug("response value: %s", await response.json())
+
+        return await response.json()
+    
+    def __del__(self):
+        self.liveness_server_client.stop_server()
 
 async def my_incoming_video_consume(track, video_processor):
     #fps_printer = FPSPrinter("My incoming video consume")
@@ -258,13 +515,12 @@ class MyMediaIncomeVideoConsume:
                 video_processor=self.video_processor 
             ))
 
-    def get_liveness_processor(self):
-        return self.video_processor.livenessProcessor
+    def get_video_processor(self):
+        return self.video_processor
 
     def cleanup(self):
         # Cleanup logic
-        if self.video_processor and self.video_processor.livenessProcessor:
-            self.video_processor.livenessProcessor.cleanup()
+        if self.video_processor and self.video_processor.liveness_server_client:
             self.video_processor = None
 
     def __del__(self):
@@ -279,8 +535,8 @@ class MyMediaIncomeVideoConsume:
             self.__video_track = None
 
         # Cleanup processor
-        if self.video_processor and self.video_processor.livenessProcessor:
-            self.video_processor.livenessProcessor.cleanup()
+        if self.video_processor and self.video_processor.liveness_server_client:
+            self.video_processor.liveness_server_client.cleanup()
             self.video_processor = None
 
 
@@ -326,7 +582,7 @@ class MobieraMediaSoupClient:
         counter = 0 # Counter for timeout (the identification shoudn't take more thatn 1 minute)
         while done==False:
             await asyncio.sleep(1.0)
-            done = self._recorder.get_liveness_processor().is_this_done()
+            done = self._recorder.get_video_processor().is_this_done()
             print(f"-------> Liveness Detector Done: {done}")
             counter+=1
             if counter > 60:
