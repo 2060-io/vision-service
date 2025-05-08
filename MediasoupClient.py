@@ -171,7 +171,9 @@ class IncommingVideoProcessor:
 
         mm_settings = generate_mm_settings(rd, d, q)
         self.mediaManager = MediaManager(mm_settings)
-        
+        self.vision_matcher_base_url = vision_matcher_base_url
+        self.verification_token = token
+
         self.liveness_server_client = GestureServerClient(
             language=lang,
             socket_path=f"/tmp/mysocket_{token}",
@@ -220,6 +222,8 @@ class IncommingVideoProcessor:
                 #)
 
         print(f"Callback: The Person is {'alive' if alive else 'not alive'}.")
+        self.done = True
+        print(f"Is this done: {self.is_this_done()}")
 
     def process_frame(self, i_frame):
         if self.add_frame_callback_fnc is not None:
@@ -341,10 +345,10 @@ class IncommingVideoProcessor:
                     except Exception as e:
                         # Handle the exception here
                         logger.error("Error occurred in face match: %s", str(e))
-                        self.gestures_requester.set_overwrite_text(
-                            self.translator.translate("error.error_doing_face_match"), 
-                            True
-                        )
+                        #self.gestures_requester.set_overwrite_text(
+                        #    self.translator.translate("error.error_doing_face_match"), 
+                        #    True
+                        #)
                 #TODO: Comment this line to avoid deleting the reference images
                 os.remove(reference_image_path)
 
@@ -517,8 +521,8 @@ class MyMediaIncomeVideoConsume:
                 video_processor=self.video_processor 
             ))
 
-    def get_liveness_processor(self):
-        return self.liveness_server_client
+    def get_video_processor(self):
+        return self.video_processor
 
     def cleanup(self):
         # Cleanup logic
@@ -584,7 +588,7 @@ class MobieraMediaSoupClient:
         counter = 0 # Counter for timeout (the identification shoudn't take more thatn 1 minute)
         while done==False:
             await asyncio.sleep(1.0)
-            done = self._recorder.get_liveness_processor().is_this_done()
+            done = self._recorder.get_video_processor().is_this_done()
             print(f"-------> Liveness Detector Done: {done}")
             counter+=1
             if counter > 60:
