@@ -35,7 +35,9 @@ RUN pip3 --version
 COPY requirements.txt ./
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY *.py .
+COPY ./mediaManager ./mediaManager
+RUN mkdir downloaded_images
 
 EXPOSE 5000
 

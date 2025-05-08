@@ -55,9 +55,6 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
     host = os.environ.get("HOST")
-    verification_index_path = os.environ.get("VERIFICATION_INDEX_PATH")
-    logging.info("verification_index_path: %s", verification_index_path)
-    verification_client_js_path = os.environ.get("VERIFICATION_CLIENT_JS_PATH")
     capture_index_path = os.environ.get("CAPTURE_INDEX_PATH")
     picture_path = os.environ.get("PICTURE_PATH")
     connect_to_mediasoup_path = os.environ.get("CONNECT_TO_MEDIASOUP_SERVER_PATH")
