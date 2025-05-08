@@ -1,0 +1,20 @@
+# Changelog
+
+## 0.1.0 (2025-05-08)
+
+
+### Features
+
+* external library support for liveness detector ([#1](https://github.com/2060-io/vision-service/issues/1)) ([0b41c1c](https://github.com/2060-io/vision-service/commit/0b41c1c1752c8e353ea269632505d884b13494ed))
+* use external face matcher ([#3](https://github.com/2060-io/vision-service/issues/3)) ([c9c71d6](https://github.com/2060-io/vision-service/commit/c9c71d6e7622b4a5f69b8cb34a4b59d5dbe96a0f))
+
+
+### Bug Fixes
+
+* cleanup references to React frontend ([#4](https://github.com/2060-io/vision-service/issues/4)) ([d90cfab](https://github.com/2060-io/vision-service/commit/d90cfab6974ace4d8f0e591cf6e2518a1a37498c))
+* debug endpoints only enabled by flag ([#5](https://github.com/2060-io/vision-service/issues/5)) ([fbbf955](https://github.com/2060-io/vision-service/commit/fbbf9555e1c88c6e27a78338405bb4ef520e32f0))
+
+
+### Documentation
+
+* basic deployment architecture and flow ([#2](https://github.com/2060-io/vision-service/issues/2)) ([2c16025](https://github.com/2060-io/vision-service/commit/2c16025f559e39d4ca701a184fc50a0c04afa11f))
