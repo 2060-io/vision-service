@@ -54,10 +54,8 @@ if __name__ == "__main__":
         ssl_context = None
 
     port = int(os.environ.get("PORT", 5000))
-    host = os.environ.get("HOST")
-    capture_index_path = os.environ.get("CAPTURE_INDEX_PATH")
-    picture_path = os.environ.get("PICTURE_PATH")
-    connect_to_mediasoup_path = os.environ.get("CONNECT_TO_MEDIASOUP_SERVER_PATH")
+    host = os.environ.get("HOST", "0.0.0.0")
+    connect_to_mediasoup_path = "/join-call"
 
     vision_matcher_base_url = os.environ.get("VISION_MATCHER_BASE_URL", "http://localhost:5123")
     logging.info("vision_matcher_base_url: %s", vision_matcher_base_url)
