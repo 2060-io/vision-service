@@ -51,12 +51,11 @@ class OutgoingVideoStreamTrack(VideoStreamTrack):
         super().__init__()
         self.width = 640
         self.height = 480
-        self.square_size = 50
-        self.velocity = 5
-        self.x_pos = 0
-        self.y_pos = 0
-        self.direction_x = 1
-        self.direction_y = 1
+        self.circle_radius = 15  # Starting radius for the circle
+        self.max_radius = 45  # Maximum radius the circle can grow to
+        self.min_radius = 15  # Minimum radius the circle can shrink to
+        self.radius_growth = 0.5  # Smaller increments for a smooth pulsing effect
+        self.growing = True  # State to determine if the circle is growing or shrinking
         self.frames = []
 
         self.last_saved_time = 0
@@ -73,23 +72,22 @@ class OutgoingVideoStreamTrack(VideoStreamTrack):
         frame = np.zeros((self.height, self.width, 3), np.uint8)
 
         if not leave_blank:
-            # Draw a square
-            cv2.rectangle(frame, (self.x_pos, self.y_pos),
-                        (self.x_pos + self.square_size,
-                        self.y_pos + self.square_size),
-                        (0, 255, 0), -1)
+            # Calculate center of the frame
+            center_x = self.width // 2
+            center_y = self.height // 2
 
-            # Update square position for x
-            self.x_pos += self.velocity * self.direction_x
-            if self.x_pos < 0 or self.x_pos + self.square_size > self.width:
-                self.direction_x = -self.direction_x
-                self.x_pos += self.velocity * self.direction_x
+            # Draw a circle at the center of the frame
+            cv2.circle(frame, (center_x, center_y), int(self.circle_radius), (0, 255, 0), -1)
 
-            # Update square position for y
-            self.y_pos += self.velocity * self.direction_y
-            if self.y_pos < 0 or self.y_pos + self.square_size > self.height:
-                self.direction_y = -self.direction_y
-                self.y_pos += self.velocity * self.direction_y
+            # Update circle radius for smooth pulsing
+            if self.growing:
+                self.circle_radius += self.radius_growth
+                if self.circle_radius >= self.max_radius:
+                    self.growing = False
+            else:
+                self.circle_radius -= self.radius_growth
+                if self.circle_radius <= self.min_radius:
+                    self.growing = True
 
         # Convert frame to VideoFrame
         video_frame = VideoFrame.from_ndarray(frame, format='bgr24')
