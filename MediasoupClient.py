@@ -68,27 +68,28 @@ class OutgoingVideoStreamTrack(VideoStreamTrack):
     def add_frame(self, frame):
         self.frames.append(frame)
 
-    def animate_frame(self, pts, time_base):
+    def animate_frame(self, pts, time_base, leave_blank=True):
         # Create a blank frame
         frame = np.zeros((self.height, self.width, 3), np.uint8)
 
-        # Draw a square
-        cv2.rectangle(frame, (self.x_pos, self.y_pos),
-                      (self.x_pos + self.square_size,
-                       self.y_pos + self.square_size),
-                      (0, 255, 0), -1)
+        if not leave_blank:
+            # Draw a square
+            cv2.rectangle(frame, (self.x_pos, self.y_pos),
+                        (self.x_pos + self.square_size,
+                        self.y_pos + self.square_size),
+                        (0, 255, 0), -1)
 
-        # Update square position for x
-        self.x_pos += self.velocity * self.direction_x
-        if self.x_pos < 0 or self.x_pos + self.square_size > self.width:
-            self.direction_x = -self.direction_x
+            # Update square position for x
             self.x_pos += self.velocity * self.direction_x
+            if self.x_pos < 0 or self.x_pos + self.square_size > self.width:
+                self.direction_x = -self.direction_x
+                self.x_pos += self.velocity * self.direction_x
 
-        # Update square position for y
-        self.y_pos += self.velocity * self.direction_y
-        if self.y_pos < 0 or self.y_pos + self.square_size > self.height:
-            self.direction_y = -self.direction_y
+            # Update square position for y
             self.y_pos += self.velocity * self.direction_y
+            if self.y_pos < 0 or self.y_pos + self.square_size > self.height:
+                self.direction_y = -self.direction_y
+                self.y_pos += self.velocity * self.direction_y
 
         # Convert frame to VideoFrame
         video_frame = VideoFrame.from_ndarray(frame, format='bgr24')
