@@ -1,0 +1,5 @@
+apiVersion: v2
+name: vision-service
+version: 0.0.1
+description: Helm chart for deploying Vision Service
+appVersion: dev
