@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/2060-io/vision-service/compare/v0.2.0...v0.3.0) (2025-06-03)
+
+
+### Features
+
+* disable test bouncing box by default  ([#9](https://github.com/2060-io/vision-service/issues/9)) ([258868a](https://github.com/2060-io/vision-service/commit/258868a89dbb1ce5d96acb43d3ead475095061a5))
+
+
+### Bug Fixes
+
+* update charts ([#12](https://github.com/2060-io/vision-service/issues/12)) ([d41c434](https://github.com/2060-io/vision-service/commit/d41c4341e388485d01fb7943a58f3d02066a63bf))
+
 ## [0.2.0](https://github.com/2060-io/vision-service/compare/v0.1.0...v0.2.0) (2025-05-08)
 
 
