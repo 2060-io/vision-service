@@ -50,6 +50,9 @@ jobs:
         with: 
           fetch-depth: 0  
           fetch-tags: true
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
 
       - name: Extract Version from Release or Git Tags
         run: |
@@ -74,3 +77,14 @@ jobs:
           docker tag $DH_USERNAME/$IMAGE_NAME:$RELEASE_VERSION $DH_USERNAME/$IMAGE_NAME:latest
           docker push $DH_USERNAME/$IMAGE_NAME:$RELEASE_VERSION
           docker push $DH_USERNAME/$IMAGE_NAME:latest
+
+      - name: Log in to Docker Hub Helm Registry
+        run: |
+          echo "$DH_TOKEN" | helm registry login -u "$DH_USERNAME" --password-stdin docker.io
+
+      - name: Push Helm chart to Docker Hub OCI repo
+        run: |
+          sed -i "s/^version:.*/version: $RELEASE_VERSION/" ./charts/Chart.yaml
+          helm dependency update ./charts
+          helm package ./charts -d ./charts
+          helm push ./charts/$IMAGE_NAME-$RELEASE_VERSION.tgz oci://docker.io/$DH_USERNAME

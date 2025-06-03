@@ -1,0 +1,33 @@
+
+app:
+  name: vision-service
+
+namespace: 
+  name: default
+
+# Ingress configuration
+ingress:
+  name: vision-service-demos-ingress
+  host: vision.demos.example.io
+  tlsSecret: vision.demos.example.io-cert
+
+statefulset:
+  name: vision-service
+  serviceName: vision-service
+  replicas: 1
+  containerName: vision-service
+  image:
+    repository: io2060/vision-service
+    tag: latest
+    pullPolicy: Always
+  storage: 1Gi
+  env:
+    HOST: "0.0.0.0"
+    NUMBER_OF_GESTURES_TO_REQUEST: "2"
+    USE_MEDIASOUP_ICE_RELAY: "false"
+    VISION_MATCHER_BASE_URL: "http://vision-matcher-service.demos:5123"
+    ENABLE_DEBUG_ENDPOINTS: "false"
+
+service:
+  name: vision-service
+  ports: 5000
