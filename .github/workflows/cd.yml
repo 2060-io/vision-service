@@ -87,4 +87,4 @@ jobs:
           sed -i "s/^version:.*/version: $RELEASE_VERSION/" ./charts/Chart.yaml
           helm dependency update ./charts
           helm package ./charts -d ./charts
-          helm push ./charts/$RELEASE_VERSION.tgz oci://docker.io/$DH_USERNAME
+          helm push ./charts/$IMAGE_NAME-$RELEASE_VERSION.tgz oci://docker.io/$DH_USERNAME

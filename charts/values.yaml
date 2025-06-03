@@ -3,7 +3,7 @@ app:
   name: vision-service
 
 namespace: 
-  name: demos
+  name: default
 
 # Ingress configuration
 ingress:
