@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/2060-io/vision-service/compare/v0.3.0...v0.3.1) (2025-06-04)
+
+
+### Bug Fixes
+
+* ci release-please output variables ([#13](https://github.com/2060-io/vision-service/issues/13)) ([861fc3f](https://github.com/2060-io/vision-service/commit/861fc3f1575bfba439e4cf807e963397ac33ce3a))
+* update chart name ([#15](https://github.com/2060-io/vision-service/issues/15)) ([badb433](https://github.com/2060-io/vision-service/commit/badb4339550974eab43491585e045bd8bd73a197))
+
 ## [0.3.0](https://github.com/2060-io/vision-service/compare/v0.2.0...v0.3.0) (2025-06-03)
 
 
