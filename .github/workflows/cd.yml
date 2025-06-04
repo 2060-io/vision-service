@@ -25,13 +25,15 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
-
+    outputs:
+      release_created: ${{ steps.release-please.outputs.release_created }}
+      tag_name: ${{ steps.release-please.outputs.tag_name }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Run Release Please
-        id: release
+        id: release-please
         uses: googleapis/release-please-action@v4
         with:
           release-type: python
