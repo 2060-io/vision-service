@@ -31,3 +31,29 @@ statefulset:
 service:
   name: vision-service
   ports: 5000
+
+# If you want to use the vision-matcher chart, you can enable it by setting the following:
+# vision-matcher-chart.enabled: true
+vision-matcher-chart:
+  enabled: false
+  app:
+    name: vision-matcher
+
+  namespace:
+    name: default
+
+  statefulset:
+    name: vision-matcher
+    serviceName: vision-matcher
+    replicas: 1
+    containerName: vision-matcher
+    image:
+      repository: io2060/vision-matcher
+      tag: latest
+      pullPolicy: Always
+    storage: 1Gi
+
+  service:
+    name: vision-matcher-service
+    ports:
+      redis: 5123
