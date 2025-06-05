@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/2060-io/vision-service/compare/v0.3.1...v0.3.2) (2025-06-05)
+
+
+### Bug Fixes
+
+* add matcher dependency ([#16](https://github.com/2060-io/vision-service/issues/16)) ([55322e2](https://github.com/2060-io/vision-service/commit/55322e2e672373844741dc4cb1441c1be9bbcecc))
+
 ## [0.3.1](https://github.com/2060-io/vision-service/compare/v0.3.0...v0.3.1) (2025-06-04)
 
 
