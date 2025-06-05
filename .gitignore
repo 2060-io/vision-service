@@ -2,8 +2,10 @@
 __pycache__/
 *.pyc
 *.pyo
+*.tgz
 app.log
 Assets/
 downloaded_images/
 uploaded_images/
 myenv
+Chart.lock
