@@ -25,9 +25,35 @@ statefulset:
     HOST: "0.0.0.0"
     NUMBER_OF_GESTURES_TO_REQUEST: "2"
     USE_MEDIASOUP_ICE_RELAY: "false"
-    VISION_MATCHER_BASE_URL: "http://vision-matcher-service.demos:5123"
+    VISION_MATCHER_BASE_URL: "http://vision-matcher-service.default:5123"
     ENABLE_DEBUG_ENDPOINTS: "false"
 
 service:
   name: vision-service
   ports: 5000
+
+# If you want to use the vision-matcher chart, you can enable it by setting the following:
+# vision-matcher-chart.enabled: true
+vision-matcher-chart:
+  enabled: false
+  app:
+    name: vision-matcher
+
+  namespace:
+    name: default
+
+  statefulset:
+    name: vision-matcher
+    serviceName: vision-matcher
+    replicas: 1
+    containerName: vision-matcher
+    image:
+      repository: io2060/vision-matcher
+      tag: latest
+      pullPolicy: Always
+    storage: 1Gi
+
+  service:
+    name: vision-matcher-service
+    ports:
+      redis: 5123
