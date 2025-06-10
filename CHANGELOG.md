@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/2060-io/vision-service/compare/v0.3.2...v0.3.3) (2025-06-10)
+
+
+### Bug Fixes
+
+* use fixed repo/version for image chart ([#18](https://github.com/2060-io/vision-service/issues/18)) ([740e8df](https://github.com/2060-io/vision-service/commit/740e8dfff3f98a7b6cca240df97bf6b667802fee))
+
 ## [0.3.2](https://github.com/2060-io/vision-service/compare/v0.3.1...v0.3.2) (2025-06-05)
 
 
