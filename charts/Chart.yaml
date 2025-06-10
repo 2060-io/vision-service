@@ -5,6 +5,6 @@ description: Helm chart for deploying Vision Service
 appVersion: dev
 dependencies:
   - name: vision-matcher-chart
-    version: v1.1.5
+    version: v1.1.6
     repository: oci://registry-1.docker.io/io2060
     condition: vision-matcher-chart.enabled
