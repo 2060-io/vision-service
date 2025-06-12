@@ -280,6 +280,10 @@ class IncommingVideoProcessor:
             #self.gestures_requester.set_overwrite_text(
             #    self.translator.translate("message.getting_reference_images")
             #)
+                
+            # Ensure downloaded_images path exists
+            os.makedirs("./downloaded_images", exist_ok=True)
+
             ret = await self.mediaManager.download_images_from_token(
                 self.verification_token,
                 "./downloaded_images"
