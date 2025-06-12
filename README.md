@@ -1,7 +1,7 @@
 =======
 # Vision Service
 
-Vision is a set of tools for capturing and verifying human biometrics.
+**Vision** is a set of tools for capturing and verifying human biometrics. They are put together and orchestrated by **Vision Service**, a backend that exposes a simple API to initiate biometric verification flows.
 
 ## Basic deployment diagram
 
@@ -9,7 +9,10 @@ The following is a typical deployment where Vision Service is in place. Managed 
 
 ![Basic deployment](./docs/diagrams/basic-deployment.png)
 
-Vision Service performs biometric verification flows based on video calls and reference images. Video calls are managed by an **WebRTC server** where it will connect to retrieve subject video stream and send its own stream (which contains instructions for the subject to prove liveness). 
+Vision Service performs biometric verification flows based on video calls and reference images. Video calls are handled by a **WebRTC server** where it will connect to retrieve subject video stream and send its own stream (which contains instructions for the subject to prove liveness). This service can join calls by using its  Mediasoup client. See [WebRTC Server](https://github.com/2060-io/webrtc-server) as a ready-to-use service to manage video calls compatible with it).
+
+It is up to each implementor to determine how to enroll users (in order to create reference images) and get them into a video call to perform liveness checking. The only requirement for Vision is the controller to implement the required callbacks and to provide a valid room URL to allow Vision Service to join the call.
+
 
 Once it detects that it is a live person on the other end, Vision Service gets reference images (provided by the Controller) and compares them by relying on a **Face Matcher** service.
 
@@ -89,7 +92,7 @@ This is called by Vision Service when a flow completes succesfully. No body data
 This is called by Vision Service when there is an error in a flow. No body data is appended.
 
 
-## Installation
+## How to run locally
 
 ### Option 1: Traditional Installation
 
@@ -137,3 +140,62 @@ docker run -d --network host vision-service
 
 *Note:* As this is a WebRTC application, running the Docker container with host networking mode is recommended for better performance and compatibility.
 
+### Testing
+
+This service relies on external components, and therefore you will need to have an instance of each of them in order to test the entire flow. However, you can leverage some demo deployments to do a quick test by following the procedure described in this section.
+
+#### Set up and run test controller
+
+This repo contains, under `test` a demo controller that implements the callbacks used to get reference images and report flow status. This is a very simple web application that serves static images you can put under `test/assets` directory. 
+
+The only thing you have to do is to put your reference image, e.g. `1234.jpg` into this directory, and then run:
+
+```
+PUBLIC_BASE_URL=http://my-ip:5001 python callbacks.py
+```
+
+Where `PUBLIC_BASE_URL` is an URL accessible by Vision Service. By default, this controller uses port 5001 but it can be overriden by setting PORT environment variable.
+
+Keep this terminal open to see further updates from Vision Service flows.
+
+#### Create room and live stream
+
+In a web browser, go to https://webrtc-webclient.dev.2060.io and connect to the call. You can then copy the Invitation Link, which will have the following structure:
+
+```https://webrtc-webclient.dev.2060.io/?domain=[WEBRTC_SERVER_HOST]&protooPort=443&roomId=[ROOM_ID]```
+
+
+#### Run Vision Service
+
+Run it either locally or by using Docker, as explained above. Make sure to specify `VISION_MATCHER_BASE_URL` environment variable, in order to let Vision Serice perform face matching. You can use http://vision-matcher.demos.dev.2060.io or your own by executing:
+
+```
+docker run -p 5123:5123 io2060/vision-matcher:latest
+```
+
+In such case, your VISION_MATCHER_BASE_URL will be http://localhost:5123.
+
+#### Start verification flow
+
+Now you can do a POST request to Vision Service by using cURL: 
+
+```
+curl -X POST http://localhost:5000/join-call \
+    -H "Content-Type: application/json" \
+    -d '{
+          "ws_url": "wss://[WEBRTC_SERVER_HOST]:443/?roomId=[ROOM_ID]&peerId=192324",
+          "callback_base_url": "[PUBLIC_BASE_URL]",
+          "token": "[REFERENCE_IMAGE_FILENAME]",
+          "lang": "en"
+        }
+```
+
+In this command, note that:
+
+- `WEBRTC_SERVER_HOST` and `ROOM_ID` are the ones you got from the Invitation Link in the previous step
+- `PUBLIC_BASE_URL` is the public base URL of your test controller (i.e. an URL accesible by your Vision Service instance, e.g. http://localhost:5001 or http://192.168.0.10:5001)
+- `REFERENCE_IMAGE_FILENAME` is the name of the image you added into assets directory (e.g. 1234.jpg)
+
+If everything works fine, Vision Service will respond immediately with a succesful HTTP status, and join the call, where you'll be able to follow the instructions and perform the biometric verification.
+
+Once the flow is finished, in the terminal where you are running your test controller you'll see lines containing `Success` or `Failure`, depending on the reference images correspondence to your face.

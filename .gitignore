@@ -4,8 +4,10 @@ __pycache__/
 *.pyo
 *.tgz
 app.log
-Assets/
+assets/
 downloaded_images/
 uploaded_images/
+node_modules
+build
 myenv
 Chart.lock
