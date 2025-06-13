@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/2060-io/vision-service/compare/v0.4.0...v0.4.1) (2025-06-13)
+
+
+### Bug Fixes
+
+* simplify chart ([#22](https://github.com/2060-io/vision-service/issues/22)) ([29a3aa1](https://github.com/2060-io/vision-service/commit/29a3aa18d659e588521379974b99f8d6a9ffc61e))
+
 ## [0.4.0](https://github.com/2060-io/vision-service/compare/v0.3.3...v0.4.0) (2025-06-12)
 
 
