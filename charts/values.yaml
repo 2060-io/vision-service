@@ -1,15 +1,14 @@
+global:
+  domain: example.io # Global domain for the application
 
 app:
   name: vision-service
 
-namespace: 
-  name: default
-
 # Ingress configuration
 ingress:
   name: vision-service-demos-ingress
-  host: vision.demos.example.io
-  tlsSecret: vision.demos.example.io-cert
+  host: vision.{{ .Values.global.domain }}
+  tlsSecret: vision.{{ .Values.global.domain }}-cert
 
 statefulset:
   name: vision-service
@@ -35,9 +34,6 @@ vision-matcher-chart:
   enabled: false
   app:
     name: vision-matcher
-
-  namespace:
-    name: default
 
   statefulset:
     name: vision-matcher
