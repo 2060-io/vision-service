@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/2060-io/vision-service/compare/v0.4.1...v0.5.0) (2025-07-11)
+
+
+### Features
+
+* update vision-matcher version on Helm chart ([7f3a5ea](https://github.com/2060-io/vision-service/commit/7f3a5eafa0388e981d3b752185c038ecfa48523d))
+
 ## [0.4.1](https://github.com/2060-io/vision-service/compare/v0.4.0...v0.4.1) (2025-06-13)
 
 
