@@ -175,8 +175,10 @@ class IncommingVideoProcessor:
         self.liveness_server_client = GestureServerClient(
             language=lang,
             socket_path=f"/tmp/mysocket_{token}",
-            num_gestures=number_of_gestures_to_request
+            num_gestures=number_of_gestures_to_request,
+            gestures_list=['blink', 'openCloseMouth', 'smile']
         )
+
 
         # Set the callback functions
         self.liveness_server_client.set_report_alive_callback(self.report_alive_callback)
