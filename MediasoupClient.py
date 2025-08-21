@@ -101,11 +101,12 @@ class OutgoingVideoStreamTrack(VideoStreamTrack):
         if len(self.frames) == 0:
             video_frame = self.animate_frame(pts, time_base)
         else:
-            # Set video_frame to the last element
+            # Use the last frame and stamp pts/time_base here
             video_frame = self.frames[-1]
-            # Keep only the last element in the array
             self.frames = [self.frames[-1]]
-        
+            video_frame.pts = pts
+            video_frame.time_base = time_base
+
         mediasoup_save_input_and_output = mediasoupSettings.get_setting("mediasoup_save_input_and_output")
         if mediasoup_save_input_and_output:
             # Save the video_frame image once per second
@@ -175,18 +176,38 @@ class IncommingVideoProcessor:
         self.liveness_server_client = GestureServerClient(
             language=lang,
             socket_path=f"/tmp/mysocket_{token}",
-            num_gestures=number_of_gestures_to_request
+            num_gestures=number_of_gestures_to_request,
+            gestures_list=["blink", "smile", "openCloseMouth"],
+            glasses_detector_mode="WARNING_ONLY",
         )
 
         # Set the callback functions
         self.liveness_server_client.set_report_alive_callback(self.report_alive_callback)
 
-        def take_picture_callback(take_picture):
+        # NEW: image callback -> convert to VideoFrame and push to outgoing track
+        def image_callback(processed_bgr):
+            try:
+                video_frame = VideoFrame.from_ndarray(processed_bgr, format="bgr24")
+                # pts/time_base will be stamped by OutgoingVideoStreamTrack.recv
+                self.add_frame_callback_fnc(video_frame)
+            except Exception as e:
+                logger.error(f"image_callback error: {e}")
+
+        self.liveness_server_client.set_image_callback(image_callback)
+
+        # UPDATED: take_picture callback now gets (take_picture, frame)
+        def take_picture_callback(take_picture, frame):
             if take_picture:
-                self.take_a_picture = True
+                if frame is not None:
+                    # Server provided the frame to save/use
+                    self.pictures.append(frame)
+                else:
+                    # Fallback to capture next incoming frame yourself
+                    self.take_a_picture = True
                 print("Take a picture callback triggered")
 
         self.liveness_server_client.set_take_picture_callback(take_picture_callback)
+
 
         # start the liveness server
         self.liveness_server_client.start_server()
@@ -230,25 +251,22 @@ class IncommingVideoProcessor:
             img = i_frame.to_ndarray(format="bgr24")
 
             mediasoup_rotate_input_image = mediasoupSettings.get_setting("mediasoup_rotate_input_image")
-            if mediasoup_rotate_input_image==90:
-                # Rotate the image 90 degrees
+            if mediasoup_rotate_input_image == 90:
                 img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-            elif mediasoup_rotate_input_image==-90:
-                # Rotate the image -90 degrees
+            elif mediasoup_rotate_input_image == -90:
                 img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            
+
             mediasoup_flip_input_image = mediasoupSettings.get_setting("mediasoup_flip_input_image")
             if mediasoup_flip_input_image:
-                # Flip the image along the vertical axis
                 img = cv2.flip(img, 1)
 
+            # If you still want to capture a local picture as fallback
             if self.take_a_picture:
                 self.take_a_picture = False
-                picture = img.copy()
-                self.pictures.append(picture)
-            
-            #img_out = self.livenessProcessor.process_image(img)
-            img_out = self.liveness_server_client.process_frame(img)
+                self.pictures.append(img.copy())
+
+            # SEND ONLY: responses will arrive via image_callback
+            self.liveness_server_client.process_frame(img)
 
             mediasoup_save_input_and_output = mediasoupSettings.get_setting("mediasoup_save_input_and_output")
             if mediasoup_save_input_and_output:
@@ -262,12 +280,6 @@ class IncommingVideoProcessor:
                     cv2.imwrite(filepath, img)
                     print(f"Saved {filepath}")
                     self.last_saved_time = int(current_time)
-
-            # Convert frame to VideoFrame
-            video_frame = VideoFrame.from_ndarray(img_out, format='bgr24')
-            video_frame.pts = pts
-            video_frame.time_base = time_base
-            self.add_frame_callback_fnc(video_frame)
 
     def is_this_done(self):
         return self.done
