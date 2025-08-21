@@ -175,7 +175,9 @@ class IncommingVideoProcessor:
         self.liveness_server_client = GestureServerClient(
             language=lang,
             socket_path=f"/tmp/mysocket_{token}",
-            num_gestures=number_of_gestures_to_request
+            num_gestures=number_of_gestures_to_request,
+            gestures_list=["blink", "smile", "openCloseMouth"], # Just for compability for now
+            glasses_detector_mode = "WARNING_ONLY", # Use glasses detector
         )
 
         # Set the callback functions
