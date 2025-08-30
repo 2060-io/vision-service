@@ -1,5 +1,4 @@
 import os
-from distutils.util import strtobool
 from aiohttp import web
 import sys
 import json
@@ -25,7 +24,6 @@ from mediaManager.MediaManagerSettings import generate_mm_settings
 from mediaManager.MediaManager import MediaManager
 from liveness_detector.server_launcher import GestureServerClient
 
-
 import traceback
 
 # Import aiortc
@@ -44,6 +42,15 @@ import logging
 
 # Get the logger for this module
 logger = logging.getLogger(__name__)
+
+def strtobool(val):
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return 1
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return 0
+    else:
+        raise ValueError(f"invalid truth value: {val}")
 
 
 class OutgoingVideoStreamTrack(VideoStreamTrack):
@@ -105,7 +112,10 @@ class OutgoingVideoStreamTrack(VideoStreamTrack):
             video_frame = self.frames[-1]
             # Keep only the last element in the array
             self.frames = [self.frames[-1]]
-        
+            # Stamp timing here since processed frames are pushed asynchronously
+            video_frame.pts = pts
+            video_frame.time_base = time_base
+
         mediasoup_save_input_and_output = mediasoupSettings.get_setting("mediasoup_save_input_and_output")
         if mediasoup_save_input_and_output:
             # Save the video_frame image once per second
@@ -153,10 +163,9 @@ class IncommingVideoProcessor:
         self.asyncio_loop = loop
 
         self.done = False #TODO: when done is True, the connecction should be closed
-        self.take_a_picture = False
         self.pictures = []
         self.add_frame_callback_fnc = add_frame_callback_fnc
-                
+
         #self.livenessProcessor = LivenessDetector(
         #    asyncio_loop=loop,
         #    verification_token=token,
@@ -175,16 +184,37 @@ class IncommingVideoProcessor:
         self.liveness_server_client = GestureServerClient(
             language=lang,
             socket_path=f"/tmp/mysocket_{token}",
-            num_gestures=number_of_gestures_to_request
+            num_gestures=number_of_gestures_to_request,
+            gestures_list=["blink", "smile", "openCloseMouth"], # Just for compability for now
+            glasses_detector_mode = "WARNING_ONLY", # Use glasses detector
         )
 
         # Set the callback functions
         self.liveness_server_client.set_report_alive_callback(self.report_alive_callback)
 
-        def take_picture_callback(take_picture):
-            if take_picture:
-                self.take_a_picture = True
-                print("Take a picture callback triggered")
+        # NEW: receive processed frames asynchronously and forward to the outgoing track
+        def image_callback(processed_bgr):
+            try:
+                # Convert to VideoFrame and push to the outgoing track
+                vf = VideoFrame.from_ndarray(processed_bgr, format="bgr24")
+                # pts/time_base will be stamped by OutgoingVideoStreamTrack.recv
+                self.add_frame_callback_fnc(vf)
+            except Exception as e:
+                logger.error(f"image_callback error: {e}")
+
+        self.liveness_server_client.set_image_callback(image_callback)
+
+        # UPDATED: take_picture callback uses ONLY server-provided frame
+        def take_picture_callback(take_picture, frame):
+            if not take_picture:
+                return
+            if frame is None:
+                # Server did not include an image; ignore (no local fallback).
+                logger.warning("take_picture signaled but server provided no frame; ignoring.")
+                return
+            # Use only the server-provided image
+            self.pictures.append(frame.copy())
+            logger.debug("Take picture: stored server-provided frame")
 
         self.liveness_server_client.set_take_picture_callback(take_picture_callback)
 
@@ -196,7 +226,7 @@ class IncommingVideoProcessor:
         # Ensure the directory exists
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
-        
+
     def report_alive_callback(self, alive):
         if (alive):
             logger.debug("The person is alive")
@@ -225,8 +255,8 @@ class IncommingVideoProcessor:
 
     def process_frame(self, i_frame):
         if self.add_frame_callback_fnc is not None:
-            time_base = i_frame.time_base
-            pts = i_frame.pts
+            # time_base = i_frame.time_base
+            # pts = i_frame.pts
             img = i_frame.to_ndarray(format="bgr24")
 
             mediasoup_rotate_input_image = mediasoupSettings.get_setting("mediasoup_rotate_input_image")
@@ -236,19 +266,15 @@ class IncommingVideoProcessor:
             elif mediasoup_rotate_input_image==-90:
                 # Rotate the image -90 degrees
                 img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            
+
             mediasoup_flip_input_image = mediasoupSettings.get_setting("mediasoup_flip_input_image")
             if mediasoup_flip_input_image:
                 # Flip the image along the vertical axis
                 img = cv2.flip(img, 1)
 
-            if self.take_a_picture:
-                self.take_a_picture = False
-                picture = img.copy()
-                self.pictures.append(picture)
-            
             #img_out = self.livenessProcessor.process_image(img)
-            img_out = self.liveness_server_client.process_frame(img)
+            # SEND ONLY: responses will arrive via image_callback
+            self.liveness_server_client.process_frame(img)
 
             mediasoup_save_input_and_output = mediasoupSettings.get_setting("mediasoup_save_input_and_output")
             if mediasoup_save_input_and_output:
@@ -263,24 +289,20 @@ class IncommingVideoProcessor:
                     print(f"Saved {filepath}")
                     self.last_saved_time = int(current_time)
 
-            # Convert frame to VideoFrame
-            video_frame = VideoFrame.from_ndarray(img_out, format='bgr24')
-            video_frame.pts = pts
-            video_frame.time_base = time_base
-            self.add_frame_callback_fnc(video_frame)
+            # Do NOT convert to VideoFrame or push here; the image_callback does it
 
     def is_this_done(self):
         return self.done
-    
+
     def _compare_local_pictures_with_reference(self):
         return self.asyncio_loop.create_task(self._async_compare_local_pictures_with_reference())
-    
+
     async def _async_compare_local_pictures_with_reference(self):
         try:    
             #self.gestures_requester.set_overwrite_text(
             #    self.translator.translate("message.getting_reference_images")
             #)
-                
+
             # Ensure downloaded_images path exists
             os.makedirs("./downloaded_images", exist_ok=True)
 
@@ -443,7 +465,7 @@ class IncommingVideoProcessor:
         # Create the data URL
         image1_url = f"data:image/jpeg;base64,{base64.b64encode(buffer1.tobytes()).decode('utf-8')}"
         image2_url = f"data:image/jpeg;base64,{base64.b64encode(buffer2.tobytes()).decode('utf-8')}"
-        
+
         face_match_url = f"{self.vision_matcher_base_url}/face_match"
 
         headers = {
@@ -460,7 +482,7 @@ class IncommingVideoProcessor:
                 logger.debug("response value: %s", await response.json())
 
         return await response.json()
-    
+
     def __del__(self):
         self.liveness_server_client.stop_server()
 
@@ -524,6 +546,8 @@ class MyMediaIncomeVideoConsume:
     def cleanup(self):
         # Cleanup logic
         if self.video_processor and self.video_processor.liveness_server_client:
+            # Ensure the server is stopped when cleaning up
+            self.video_processor.liveness_server_client.stop_server()
             self.video_processor = None
 
     def __del__(self):
@@ -539,7 +563,8 @@ class MyMediaIncomeVideoConsume:
 
         # Cleanup processor
         if self.video_processor and self.video_processor.liveness_server_client:
-            self.video_processor.liveness_server_client.cleanup()
+            # Stop the server client properly
+            self.video_processor.liveness_server_client.stop_server()
             self.video_processor = None
 
 
@@ -573,7 +598,7 @@ class MobieraMediaSoupClient:
 
         self._sendTransport: Optional[Transport] = None
         self._recvTransport: Optional[Transport] = None
-        
+
         self._producers = []
         self._consumers = []
         self._tasks = []
@@ -590,7 +615,7 @@ class MobieraMediaSoupClient:
             counter+=1
             if counter > 60:
                 done=True
-    
+
     # websocket receive task
     async def recv_msg_task(self):
         while True:
@@ -654,7 +679,7 @@ class MobieraMediaSoupClient:
 
     async def run(self):
         self._websocket = await websockets.connect(self._uri, subprotocols=["protoo"])
-        
+
         task_run_recv_msg = asyncio.create_task(self.recv_msg_task())
         self._tasks.append(task_run_recv_msg)
         # Task to verify if the liveness detector ended
@@ -705,7 +730,7 @@ class MobieraMediaSoupClient:
             ]
             # Update the 'headerExtensions' with the filtered list
             ans["data"]["headerExtensions"] = filtered_header_extensions
-        
+
         # Load Router RtpCapabilities
         await self._device.load(ans["data"])
 
@@ -735,13 +760,13 @@ class MobieraMediaSoupClient:
             "dtlsParameters": ans["data"]["dtlsParameters"],
             "sctpParameters": ans["data"]["sctpParameters"]
         }
-        
+
         iceServers = ans["data"].get("iceServers", None)
         if iceServers is not None:
             transport_params["iceServers"] = iceServers
             if self.use_ice_relay:
                 transport_params["iceTransportPolicy"] = 'relay'
-        
+
         self._sendTransport = self._device.createSendTransport(**transport_params)
 
         @self._sendTransport.on("connect")
@@ -888,13 +913,13 @@ class MobieraMediaSoupClient:
             "dtlsParameters": ans["data"]["dtlsParameters"],
             "sctpParameters": ans["data"]["sctpParameters"]
         }
-        
+
         iceServers = ans["data"].get("iceServers", None)
         if iceServers is not None:
             transport_params["iceServers"] = iceServers
             if self.use_ice_relay:
                 transport_params["iceTransportPolicy"] = 'relay'
-        
+
         self._recvTransport = self._device.createRecvTransport(**transport_params)
 
         @self._recvTransport.on("connect")
@@ -972,13 +997,13 @@ class MobieraMediaSoupClient:
         if self._recvTransport:
             print("################### Closing Recv Transport")
             await self._recvTransport.close()
-        
+
         print("################### Closing Socket")
         await self._websocket.close()
         print("################### Closing Recorder")
         await self._recorder.stop()
         print("################### Close Done")
-    
+
     async def leaveRoom(self):
         try:
             print('**** Initialize leaveRoom method ****')
@@ -995,7 +1020,7 @@ class MobieraMediaSoupClient:
 
             # Send the request to the server
             await self._send_request(req)
-            
+
             # Wait for the server response
             ans = await self._wait_for(self._answers[reqId], timeout=15)
 

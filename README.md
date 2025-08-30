@@ -160,14 +160,14 @@ Keep this terminal open to see further updates from Vision Service flows.
 
 #### Create room and live stream
 
-In a web browser, go to https://webrtc-webclient.dev.2060.io and connect to the call. You can then copy the Invitation Link, which will have the following structure:
+In a web browser, go to https://webrtc-webclient.demos.2060.io and connect to the call. You can then copy the Invitation Link, which will have the following structure:
 
 ```https://webrtc-webclient.dev.2060.io/?domain=[WEBRTC_SERVER_HOST]&protooPort=443&roomId=[ROOM_ID]```
 
 
 #### Run Vision Service
 
-Run it either locally or by using Docker, as explained above. Make sure to specify `VISION_MATCHER_BASE_URL` environment variable, in order to let Vision Serice perform face matching. You can use http://vision-matcher.demos.dev.2060.io or your own by executing:
+Run it either locally or by using Docker, as explained above. Make sure to specify `VISION_MATCHER_BASE_URL` environment variable, in order to let Vision Serice perform face matching. You can use http://vision-matcher.demos.2060.io or your own by executing:
 
 ```
 docker run -p 5123:5123 io2060/vision-matcher:latest
