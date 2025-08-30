@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/2060-io/vision-service/compare/v0.5.0...v0.6.0) (2025-08-30)
+
+
+### Features
+
+* update liveness detector 0.7.0 ([#25](https://github.com/2060-io/vision-service/issues/25)) ([04cecff](https://github.com/2060-io/vision-service/commit/04cecff0bb6bb506a2b8747b92b82aa512d8b045))
+
 ## [0.5.0](https://github.com/2060-io/vision-service/compare/v0.4.1...v0.5.0) (2025-07-11)
 
 
