@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/2060-io/vision-service/compare/v0.6.0...v0.6.1) (2025-09-04)
+
+
+### Bug Fixes
+
+* asyncio event loop handling for vision liveness detector ([#27](https://github.com/2060-io/vision-service/issues/27)) ([1feed0c](https://github.com/2060-io/vision-service/commit/1feed0c7c3496dd26d4d379404c1bf6d4a93498c))
+
 ## [0.6.0](https://github.com/2060-io/vision-service/compare/v0.5.0...v0.6.0) (2025-08-30)
 
 
