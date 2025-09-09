@@ -17,6 +17,13 @@ statefulset:
   containerName: vision-service
   pullPolicy: Always
   storage: 1Gi
+  resources:
+    requests:
+      memory: "384Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
   env:
     HOST: "0.0.0.0"
     NUMBER_OF_GESTURES_TO_REQUEST: "2"

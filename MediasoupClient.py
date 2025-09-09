@@ -243,6 +243,7 @@ class IncommingVideoProcessor:
         
         self.liveness_server_client.set_image_callback(_thread_image_callback)
 
+
         # Callback: take picture -> schedule on loop
         def _on_take_picture(take_picture, frame):
             if not take_picture:
