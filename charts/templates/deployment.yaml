@@ -70,6 +70,13 @@ spec:
             - name: {{ $key }}
               value: "{{ $value }}"
             {{- end }}
+          resources:
+            requests:
+              memory: {{ .Values.statefulset.resources.requests.memory | quote }}
+              cpu: {{ .Values.statefulset.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.statefulset.resources.limits.memory | quote }}
+              cpu: {{ .Values.statefulset.resources.limits.cpu | quote }}
           volumeMounts:
             - name: vision-service-storage
               mountPath: /data
