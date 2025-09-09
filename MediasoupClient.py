@@ -18,11 +18,14 @@ from pymediasoup.producer import Producer
 from pymediasoup.data_consumer import DataConsumer
 from pymediasoup.data_producer import DataProducer
 from pymediasoup.sctp_parameters import SctpStreamParameters
+from collections import deque
+import threading
 
 
 from mediaManager.MediaManagerSettings import generate_mm_settings
 from mediaManager.MediaManager import MediaManager
 from liveness_detector.server_launcher import GestureServerClient
+
 
 import traceback
 
@@ -58,21 +61,26 @@ class OutgoingVideoStreamTrack(VideoStreamTrack):
         super().__init__()
         self.width = 640
         self.height = 480
-        self.circle_radius = 15  # Starting radius for the circle
-        self.max_radius = 45  # Maximum radius the circle can grow to
-        self.min_radius = 15  # Minimum radius the circle can shrink to
-        self.radius_growth = 0.5  # Smaller increments for a smooth pulsing effect
-        self.growing = True  # State to determine if the circle is growing or shrinking
-        self.frames = []
+        self.circle_radius = 15
+        self.max_radius = 45
+        self.min_radius = 15
+        self.radius_growth = 0.5
+        self.growing = True
+
+        # Thread-safe last-frame storage
+        self._last_frame = None
+        self._lock = threading.Lock()
 
         self.last_saved_time = 0
         self.save_dir = 'saved_images_temp'
         # Ensure the directory exists
         if not os.path.exists(self.save_dir):
-            os.makedirs(self.save_dir)        
+            os.makedirs(self.save_dir)
 
-    def add_frame(self, frame):
-        self.frames.append(frame)
+    def add_frame(self, frame: VideoFrame):
+        # Can be called from any thread
+        with self._lock:
+            self._last_frame = frame
 
     def animate_frame(self, pts, time_base, leave_blank=True):
         # Create a blank frame
@@ -105,30 +113,34 @@ class OutgoingVideoStreamTrack(VideoStreamTrack):
     async def recv(self):
         pts, time_base = await self.next_timestamp()
 
-        if len(self.frames) == 0:
-            video_frame = self.animate_frame(pts, time_base)
-        else:
-            # Set video_frame to the last element
-            video_frame = self.frames[-1]
-            # Keep only the last element in the array
-            self.frames = [self.frames[-1]]
-            # Stamp timing here since processed frames are pushed asynchronously
-            video_frame.pts = pts
-            video_frame.time_base = time_base
+        # Take a snapshot of the last frame
+        with self._lock:
+            last = self._last_frame
 
+        if last is None:
+            # Show animation so we know the pipeline is alive even when no frames yet
+            video_frame = self.animate_frame(pts, time_base, leave_blank=False)
+        else:
+            # Stamp timing here
+            last.pts = pts
+            last.time_base = time_base
+            video_frame = last
+
+        # Avoid blocking disk I/O on the event loop
         mediasoup_save_input_and_output = mediasoupSettings.get_setting("mediasoup_save_input_and_output")
-        if mediasoup_save_input_and_output:
-            # Save the video_frame image once per second
-            current_time = time.time()
-            if int(current_time) != self.last_saved_time and len(self.frames) > 0:
-                timestamp = int(current_time)
-                # Extract the image from the VideoFrame
-                img = video_frame.to_ndarray(format='bgr24')
-                filename = f"out_{timestamp}.jpg"
-                filepath = os.path.join(self.save_dir, filename)
-                cv2.imwrite(filepath, img)
-                print(f"Saved {filepath}")
-                self.last_saved_time = int(current_time)
+        if mediasoup_save_input_and_output and last is not None:
+            now = time.time()
+            if int(now) != self.last_saved_time:
+                self.last_saved_time = int(now)
+                try:
+                    # Offload imwrite to a thread pool to avoid blocking the loop
+                    loop = asyncio.get_running_loop()
+                    img = video_frame.to_ndarray(format='bgr24')
+                    filename = f"out_{int(now)}.jpg"
+                    filepath = os.path.join(self.save_dir, filename)
+                    loop.run_in_executor(None, cv2.imwrite, filepath, img)
+                except Exception:
+                    logger.exception("Failed to save outgoing frame")
 
         return video_frame
 
@@ -217,18 +229,19 @@ class IncommingVideoProcessor:
             lambda alive: _dispatch_to_loop(_on_report_alive, alive)
         )
 
-        # Callback: receive processed frames from server -> schedule on loop
-        def _on_image(processed_bgr):
+        # Do conversion off the event loop (in the server recv thread),
+        # then schedule only the add_frame onto the loop.
+        def _thread_image_callback(processed_bgr):
             try:
                 vf = VideoFrame.from_ndarray(processed_bgr, format="bgr24")
-                # pts/time_base will be stamped by OutgoingVideoStreamTrack.recv
-                self.add_frame_callback_fnc(vf)
+                if self.asyncio_loop and self.asyncio_loop.is_running():
+                    self.asyncio_loop.call_soon_threadsafe(self.add_frame_callback_fnc, vf)
+                else:
+                    self.add_frame_callback_fnc(vf)
             except Exception:
                 logger.exception("image_callback error")
-
-        self.liveness_server_client.set_image_callback(
-            lambda processed_bgr: _dispatch_to_loop(_on_image, processed_bgr)
-        )
+        
+        self.liveness_server_client.set_image_callback(_thread_image_callback)
 
         # Callback: take picture -> schedule on loop
         def _on_take_picture(take_picture, frame):
@@ -305,7 +318,8 @@ class IncommingVideoProcessor:
                     # Construct the full file path for saving
                     filename = f"in_{timestamp}.jpg"
                     filepath = os.path.join(self.save_dir, filename)
-                    cv2.imwrite(filepath, img)
+                    loop = asyncio.get_running_loop()
+                    loop.run_in_executor(None, cv2.imwrite, filepath, img)
                     print(f"Saved {filepath}")
                     self.last_saved_time = int(current_time)
 
