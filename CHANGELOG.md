@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/2060-io/vision-service/compare/v0.6.1...v0.7.0) (2025-09-10)
+
+
+### Features
+
+* Add resources limit to helm deployment ([#29](https://github.com/2060-io/vision-service/issues/29)) ([32066b1](https://github.com/2060-io/vision-service/commit/32066b144e25778f3ac683bc9b91858380c622d7))
+
+
+### Bug Fixes
+
+* asyncio liveness problem with thread safe ([#31](https://github.com/2060-io/vision-service/issues/31)) ([e104063](https://github.com/2060-io/vision-service/commit/e104063cad36c4aeec3904e4c598de0802860344))
+
 ## [0.6.1](https://github.com/2060-io/vision-service/compare/v0.6.0...v0.6.1) (2025-09-04)
 
 
