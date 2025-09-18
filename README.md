@@ -91,6 +91,20 @@ This is called by Vision Service when a flow completes succesfully. No body data
 
 This is called by Vision Service when there is an error in a flow. No body data is appended.
 
+## Configuration
+
+Most configuration is done by environment variables. These variables might be set also in `.env` file in the form of KEY=VALUE (one per line).
+
+| Variable                   | Description                                     | Default value           |
+| -------------------------- | ----------------------------------------------- | ----------------------- |
+| PORT                 | Local port where the app will be running        | 5000                    |
+| HOST                 | Specific network interface to bind the service (0.0.0.0 to all)                   | 0.0.0.0                    |
+| VISION_MATCHER_BASE_URL           | URL where Face matcher is located          | http://localhost:5123                    |
+| NUMBER_OF_GESTURES_TO_REQUEST | Number of gestures to request in liveness detection flow | 2                    |
+| GLASSES_DETECTOR_MODE | Define how glasses detection works: WARNING_ONLY will only show a warning message. ERROR will fail immediately if glasses are detected in the face. NONE will disable the glass detector | NONE                    |
+| USE_MEDIASOUP_ICE_RELAY | Whether to use an ICE relay for WebRTC | False                    |
+| VERBOSE                | If defined, it will log up to DEBUG level            | not defined           |
+| ENABLE_DEBUG_ENDPOINTS            | Add some endpoints useful for debugging purposes. Not suitable for production.                     | False |
 
 ## How to run locally
 
