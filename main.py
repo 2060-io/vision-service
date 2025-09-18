@@ -66,7 +66,7 @@ if __name__ == "__main__":
     enable_debug_endpoints = bool(strtobool(enable_debug_endpoints_str))
     logging.info("enable_debug_endpoints: %s", enable_debug_endpoints_str)
 
-    glasses_detector_mode = os.environ.get("GLASSES_DETECTOR_MODE", "NONE")
+    glasses_detector_mode = os.environ.get("GLASSES_DETECTOR_MODE", "OFF")
     logging.info(f"glasses_detector_mode:{glasses_detector_mode}")
 
     use_mediasoup_ice_relay_str = os.environ.get("USE_MEDIASOUP_ICE_RELAY", "false")

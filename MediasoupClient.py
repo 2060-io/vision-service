@@ -168,7 +168,7 @@ class FPSPrinter:
 
 
 class IncommingVideoProcessor:
-    def __init__(self, add_frame_callback_fnc, width, height, vision_matcher_base_url, loop=None, token="", rd="", d="", q="", lang="es", glasses_detector_mode="NONE"):
+    def __init__(self, add_frame_callback_fnc, width, height, vision_matcher_base_url, loop=None, token="", rd="", d="", q="", lang="es", glasses_detector_mode="OFF"):
         self.width = width
         self.height = height
         number_of_gestures_to_request = 2
@@ -530,7 +530,7 @@ class MyMediaIncomeVideoConsume:
 T = TypeVar("T")
 
 class MobieraMediaSoupClient:
-    def __init__(self, uri, vision_matcher_base_url, loop=None, token="", rd="", d="", q="", lang="es", glasses_detector_mode="NONE", use_ice_relay=False):
+    def __init__(self, uri, vision_matcher_base_url, loop=None, token="", rd="", d="", q="", lang="es", glasses_detector_mode="OFF", use_ice_relay=False):
 
         self.use_ice_relay = use_ice_relay
         if not loop:
