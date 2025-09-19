@@ -39,7 +39,7 @@ logger.addHandler(fh)
 
 if __name__ == "__main__":
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "loglevel;error"
-    verbose = os.environ.get("VERVOSE_APP")
+    verbose = os.environ.get("VERBOSE")
     if verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
@@ -66,12 +66,19 @@ if __name__ == "__main__":
     enable_debug_endpoints = bool(strtobool(enable_debug_endpoints_str))
     logging.info("enable_debug_endpoints: %s", enable_debug_endpoints_str)
 
+    glasses_detector_mode = os.environ.get("GLASSES_DETECTOR_MODE", "OFF")
+    logging.info(f"glasses_detector_mode:{glasses_detector_mode}")
+
+    use_mediasoup_ice_relay_str = os.environ.get("USE_MEDIASOUP_ICE_RELAY", "false")
+    use_mediasoup_ice_relay = bool(strtobool(use_mediasoup_ice_relay_str))
+    logging.info(f"use_mediasoup_ice_relay:{use_mediasoup_ice_relay}")
+
     app = web.Application()
         
     asyncio_loop = asyncio.get_event_loop()
     logging.info("Asyncio loop: %s", asyncio_loop)
     # Pass the environment variable to the offer function when invoked by aiohttp
-    app.router.add_post(connect_to_mediasoup_path, partial(connectToMediasoupServer, vision_matcher_base_url))
+    app.router.add_post(connect_to_mediasoup_path, partial(connectToMediasoupServer, vision_matcher_base_url, use_mediasoup_ice_relay, glasses_detector_mode))
 
     if enable_debug_endpoints:
         app.router.add_get('/ms_images', serve_images)  # Add route to view images

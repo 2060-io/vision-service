@@ -168,7 +168,7 @@ class FPSPrinter:
 
 
 class IncommingVideoProcessor:
-    def __init__(self, add_frame_callback_fnc, width, height, vision_matcher_base_url, loop=None, token="", rd="", d="", q="", lang="es"):
+    def __init__(self, add_frame_callback_fnc, width, height, vision_matcher_base_url, loop=None, token="", rd="", d="", q="", lang="es", glasses_detector_mode="OFF"):
         self.width = width
         self.height = height
         number_of_gestures_to_request = 2
@@ -188,7 +188,7 @@ class IncommingVideoProcessor:
             socket_path=f"/tmp/mysocket_{token}",
             num_gestures=number_of_gestures_to_request,
             gestures_list=["blink", "smile", "openCloseMouth"],  # Just for compatibility for now
-            glasses_detector_mode="WARNING_ONLY",  # Use glasses detector
+            glasses_detector_mode=glasses_detector_mode,  # Use glasses detector
         )
 
         # Helper: dispatch any callback coming from the background recv thread
@@ -458,7 +458,7 @@ async def my_incoming_video_consume(track, video_processor):
             return
 
 class MyMediaIncomeVideoConsume:
-    def __init__(self, vision_matcher_base_url, add_frame_callback_fnc=None, loop=None, token="", rd="", d="", q="", lang="es"):
+    def __init__(self, vision_matcher_base_url, add_frame_callback_fnc=None, loop=None, token="", rd="", d="", q="", lang="es", glasses_detector_mode="OFF"):
         self.__video_track = None
         self.add_frame_callback_fnc = add_frame_callback_fnc
         self.loop = loop
@@ -467,6 +467,7 @@ class MyMediaIncomeVideoConsume:
         self.d = d
         self.q = q
         self.lang = lang
+        self.glasses_detector_mode = glasses_detector_mode
 
         # Create a single video processor for all video tracks
         self.video_processor = IncommingVideoProcessor(
@@ -479,7 +480,8 @@ class MyMediaIncomeVideoConsume:
             rd=self.rd,
             d=self.d,
             q=self.q,
-            lang=self.lang
+            lang=self.lang,
+            glasses_detector_mode=self.glasses_detector_mode
         )
 
     def addTrack(self, track):
@@ -528,7 +530,7 @@ class MyMediaIncomeVideoConsume:
 T = TypeVar("T")
 
 class MobieraMediaSoupClient:
-    def __init__(self, uri, vision_matcher_base_url, loop=None, token="", rd="", d="", q="", lang="es", use_ice_relay=False):
+    def __init__(self, uri, vision_matcher_base_url, loop=None, token="", rd="", d="", q="", lang="es", glasses_detector_mode="OFF", use_ice_relay=False):
 
         self.use_ice_relay = use_ice_relay
         if not loop:
@@ -547,7 +549,7 @@ class MobieraMediaSoupClient:
         # Use the custom video track with animation
         videoTrack = OutgoingVideoStreamTrack()
         self._recorder = MyMediaIncomeVideoConsume(vision_matcher_base_url=vision_matcher_base_url,
-            add_frame_callback_fnc=videoTrack.add_frame, loop=loop, token=token, rd=rd, d=d, q=q, lang=lang)
+            add_frame_callback_fnc=videoTrack.add_frame, loop=loop, token=token, rd=rd, d=d, q=q, lang=lang, glasses_detector_mode=glasses_detector_mode)
         self._videoTrack = videoTrack
 
         self._tracks.append(videoTrack)
@@ -985,9 +987,9 @@ class MobieraMediaSoupClient:
         except Exception as e:
             print(f"Error in leaveRoom: {e}")
 
-async def runMediasoupClientTask(uri, vision_matcher_base_url, loop, token, d, q, lang, use_ice_relay=False):
+async def runMediasoupClientTask(uri, vision_matcher_base_url, loop, token, d, q, lang, glasses_detector_mode, use_ice_relay=False):
     demo = MobieraMediaSoupClient(
-        uri=uri, vision_matcher_base_url=vision_matcher_base_url, loop=loop, token=token, rd="", d=d, q=q, lang = lang, use_ice_relay=use_ice_relay)
+        uri=uri, vision_matcher_base_url=vision_matcher_base_url, loop=loop, token=token, rd="", d=d, q=q, lang = lang, glasses_detector_mode = glasses_detector_mode, use_ice_relay=use_ice_relay)
     logger.debug("PASS1")
     await loop.create_task(demo.run())
     print("################################## DONE >>>>>>>>>>>>>>>>>>>>>>>>>>><")
@@ -997,7 +999,7 @@ async def runMediasoupClientTask(uri, vision_matcher_base_url, loop, token, d, q
     print("################################## Closing...DONE")
     demo = None
 
-async def connectToMediasoupServer(vision_matcher_base_url, request):
+async def connectToMediasoupServer(vision_matcher_base_url, use_mediasoup_ice_relay, glasses_detector_mode, request):
     """
     Asynchronously handles connecting to a Mediasoup server, using parameters provided in the HTTP request.
 
@@ -1032,10 +1034,6 @@ async def connectToMediasoupServer(vision_matcher_base_url, request):
         logger.debug(f"token:{token}")
         logger.debug(f"lang:{lang}")
 
-        use_mediasoup_ice_relay_str = os.environ.get("USE_MEDIASOUP_ICE_RELAY", "false")
-        use_mediasoup_ice_relay = bool(strtobool(use_mediasoup_ice_relay_str))
-        logger.debug(f"use_mediasoup_ice_relay:{use_mediasoup_ice_relay}")
-
         if full_url:
             uri = full_url
 
@@ -1049,7 +1047,7 @@ async def connectToMediasoupServer(vision_matcher_base_url, request):
         logger.debug("uri:" + uri)
 
         # Run in another task
-        loop.create_task(runMediasoupClientTask(uri, vision_matcher_base_url, loop, token, d, q, lang, use_mediasoup_ice_relay))
+        loop.create_task(runMediasoupClientTask(uri, vision_matcher_base_url, loop, token, d, q, lang, glasses_detector_mode, use_mediasoup_ice_relay))
 
         textobj = {
             "msj": f'Successfully connected:',
