@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/2060-io/vision-service/compare/v0.7.0...v0.8.0) (2025-09-19)
+
+
+### Features
+
+* enable glasses detector mode selection ([#33](https://github.com/2060-io/vision-service/issues/33)) ([7b37608](https://github.com/2060-io/vision-service/commit/7b37608ea4e69010e2c4639d4c5a97168b8834eb))
+
 ## [0.7.0](https://github.com/2060-io/vision-service/compare/v0.6.1...v0.7.0) (2025-09-10)
 
 
